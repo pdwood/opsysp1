@@ -83,19 +83,19 @@ public class SystemSimMain{
 		Event e = eventQueue.remove();
 		t_milli = e.getTime();
 		
-		if (e.getType().equals("Process Arrives"))
+		if (e.getType().equals("Process Arrives")){
 			processArrives(e);
-		else if (e.getType().equals("Start CPU"))
+		}else if (e.getType().equals("Start CPU")){
 			startCPU(e);
-		else if (e.getType().equals("Complete CPU"))
+		}else if (e.getType().equals("Complete CPU")){
 			completeCPU(e);
-		else if (e.getType().equals("Start IO"))
+		}else if (e.getType().equals("Start IO")){
 			startIO(e);
-		else if (e.getType().equals("Complete IO"))
+		}else if (e.getType().equals("Complete IO")){
 			completeIO(e);
-		else if (e.getType().equals("Terminate Process"))
+		}else if (e.getType().equals("Terminate Process")){
 			processTerminates(e);
-		
+		}
 		return 0;
 	}
 	
@@ -120,8 +120,7 @@ public class SystemSimMain{
 		if (e.getProcess().getRemainingCPUBursts() > 1) {
 			Event newE = new Event("Complete CPU", t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
 			eventQueue.add(newE);
-		}
-		else {
+		}else{
 			Event newE = new Event("Terminate Process", t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
 			eventQueue.add(newE);
 		}

@@ -1,0 +1,5 @@
+public enum EventType{
+
+	ARRIVE, CPUSTART, CPUDONE, IOSTART, IODONE, TERMINATE;
+
+}

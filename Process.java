@@ -8,8 +8,7 @@
  */
 
 public class Process {
-	public
-	Process(char id, int arrival, int burstTime, int bursts, int io) {
+	public Process(char id, int arrival, int burstTime, int bursts, int io) {
 		ID = id;
 		arrival_time = arrival;
 		cpuBurstTime = burstTime;
@@ -33,9 +32,7 @@ public class Process {
 	int getIOEntryTime() {return ioEntryTime;}
 	void setIOEntryTime(int s) {ioEntryTime = s;}
 	int getCPUEntryTime() {return cpuEntryTime;}
-	void setCPUEntryTime(int s) {cpuEntryTime = s;}
-	
-	
+	void setCPUEntryTime(int s) {cpuEntryTime = s;}	
 	
 	//<proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
 	private final char ID;
@@ -46,8 +43,5 @@ public class Process {
 	
 	private int remainingCPUBursts;
 	private int ioEntryTime, cpuEntryTime;
-	
-	
-
-	
+		
 };
