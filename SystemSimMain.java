@@ -24,7 +24,7 @@ public class SystemSimMain{
 	static Queue<Process> cpuQueue;
 	static Queue<Event> eventQueue;
 
-	public void parseFile(String filename){
+	public static void parseFile(String filename){
 		try{
 			Scanner input = new Scanner(new File(filename));
 			while(input.hasNextLine()){
@@ -32,7 +32,10 @@ public class SystemSimMain{
 				Process p;
 				if(line.charAt(0)!='#'){
 					p = parse(line);
+					
+					Event e = new Event(EventType.ARRIVE, p.getArrivalTime(), p);
 				}
+				
 			}
 		}catch(IOException e){
 			System.err.println("ERROR: Cannot read file "+filename+" ("+e.getMessage()+")");
@@ -40,9 +43,10 @@ public class SystemSimMain{
 	}
 
 
-	public Process parse(String in){
+	public static Process parse(String in){
 		String[] tokens = in.split("|");
-		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description: "+in);
+		
+		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
 	
@@ -88,7 +92,21 @@ public class SystemSimMain{
 	static int executeEvent() {
 		Event e = eventQueue.remove();
 		t_milli = e.getTime();
-
+		/*
+		System.out.println("\n\n\n");
+		
+		System.out.println("EventQueue: "+eventQueue.size());
+		Iterator<Event> iter=eventQueue.iterator();
+		while (iter.hasNext()) {
+			System.out.println("    "+iter.next());
+		}
+		Iterator<Process> iter2 = cpuQueue.iterator();
+		System.out.println("ProcessQueue: "+cpuQueue.size());
+		while (iter2.hasNext()) {
+			System.out.println("    "+iter2.next());
+		}
+		System.out.println("Type "+e.getType());
+		*/
 		switch(e.getType()){
 		case ARRIVE:
 			return processArrives(e);
@@ -123,20 +141,9 @@ public class SystemSimMain{
 	
 	static int startCPU(Event e) {
 		cpuInUse = true;
-		System.out.println("Checkpoint 1. EventQueue: "+eventQueue.size());
-		Iterator<Event> iter=eventQueue.iterator();
-		while (iter.hasNext()) {
-			System.out.println("    "+iter.next());
-		}
-		Iterator<Process> iter2 = cpuQueue.iterator();
-		System.out.println("Checkpoint 1. ProcessQueue: ");
-		while (iter2.hasNext()) {
-			System.out.println("    "+iter2.next());
-		}
 		
 		cpuQueue.remove(); // This is the same process as stored in e.
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" started using the CPU [Q"+cpuQueueString()+"]");
-		System.out.println("Checkpoint 2. ");
 		
 		if (e.getProcess().getRemainingCPUBursts() > 1) {
 			Event newE = new Event(EventType.CPUDONE, t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
@@ -181,7 +188,7 @@ public class SystemSimMain{
 	
 	static int completeIO(Event e) {
 		
-		if (cpuQueue.isEmpty()) {
+		if (cpuQueue.isEmpty() && !cpuInUse) {
 			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t/2, e.getProcess());
 			eventQueue.add(newE);
 		}
@@ -201,6 +208,9 @@ public class SystemSimMain{
 		if (!cpuQueue.isEmpty()) {
 			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t, cpuQueue.peek());
 			eventQueue.add(newE);
+		}
+		else {
+			cpuInUse = false;
 		}
 		
 		return 0;

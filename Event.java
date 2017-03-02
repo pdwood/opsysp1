@@ -44,6 +44,14 @@ public class Event implements Comparable<Event> {
 			return 1;
 		if (this.getTime() < arg1.getTime())
 			return -1;
+		
+		if (this.getTime() == arg1.getTime()) {
+			if (this.getType().ordinal() > arg1.getType().ordinal())
+				return 1;
+			if (this.getType().ordinal() < arg1.getType().ordinal())
+				return -1;
+		}
+		
 		return 0;
 	}
 }
