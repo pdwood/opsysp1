@@ -18,7 +18,8 @@ import java.util.PriorityQueue;
 
 
 public class SystemSimMain{
-	static int cs_t=6;
+	static boolean cpuInUse;
+	static int cs_t=8;
 	static int t_milli=0;
 	static Queue<Process> cpuQueue;
 	static Queue<Event> eventQueue;
@@ -52,13 +53,14 @@ public class SystemSimMain{
 		// For each process, make an event of processArrives. 
 		Process p1 = new Process("A", 0, 168, 5, 287);
 		Process p2 = new Process("B", 0, 385, 1, 0);
-		Process p3 = new Process("C", 190, 97, 5, 2499);
-		Process p4 = new Process("D", 250, 1770, 2, 822);
-				
+		Process p3 = new Process("C", 250, 1770, 2, 822);
+		Process p4 = new Process("D", 190, 97, 5, 2499);
+		
+		
 		Event e1 = new Event(EventType.ARRIVE, 0, p1);
 		Event e2 = new Event(EventType.ARRIVE, 0, p2);
-		Event e3 = new Event(EventType.ARRIVE, 190, p3);
-		Event e4 = new Event(EventType.ARRIVE, 250, p4);
+		Event e3 = new Event(EventType.ARRIVE, 250, p3);
+		Event e4 = new Event(EventType.ARRIVE, 190, p4);
 		
 		eventQueue.add(e1);
 		eventQueue.add(e2);
@@ -107,21 +109,34 @@ public class SystemSimMain{
 	
 	static int processArrives(Event e) {
 		
-		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" arrived [Q"+cpuQueueString()+"]");
-		
-		if (cpuQueue.isEmpty()) {
+		if (cpuQueue.isEmpty() && !cpuInUse) {
 			Event newEvent = new Event(EventType.CPUSTART, t_milli+cs_t/2, e.getProcess());
 			eventQueue.add(newEvent);
 		}
-
+		
 		cpuQueue.add(e.getProcess());
+		
+		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" arrived [Q"+cpuQueueString()+"]");
 		
 		return 0;
 	}
 	
 	static int startCPU(Event e) {
+		cpuInUse = true;
+		System.out.println("Checkpoint 1. EventQueue: "+eventQueue.size());
+		Iterator<Event> iter=eventQueue.iterator();
+		while (iter.hasNext()) {
+			System.out.println("    "+iter.next());
+		}
+		Iterator<Process> iter2 = cpuQueue.iterator();
+		System.out.println("Checkpoint 1. ProcessQueue: ");
+		while (iter2.hasNext()) {
+			System.out.println("    "+iter2.next());
+		}
 		
+		cpuQueue.remove(); // This is the same process as stored in e.
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" started using the CPU [Q"+cpuQueueString()+"]");
+		System.out.println("Checkpoint 2. ");
 		
 		if (e.getProcess().getRemainingCPUBursts() > 1) {
 			Event newE = new Event(EventType.CPUDONE, t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
@@ -144,8 +159,11 @@ public class SystemSimMain{
 		eventQueue.add(newIOEvent);
 		
 		if (!cpuQueue.isEmpty()) {
-			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t, cpuQueue.remove());
+			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t, cpuQueue.peek());
 			eventQueue.add(newE);
+		}
+		else {
+			cpuInUse = false;
 		}
 		
 		return 0;
@@ -163,13 +181,14 @@ public class SystemSimMain{
 	
 	static int completeIO(Event e) {
 		
-		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" completed I/O [Q"+cpuQueueString()+"]");
-		
-		cpuQueue.add(e.getProcess());
 		if (cpuQueue.isEmpty()) {
 			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t/2, e.getProcess());
 			eventQueue.add(newE);
 		}
+		
+		cpuQueue.add(e.getProcess());
+		
+		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" completed I/O [Q"+cpuQueueString()+"]");
 		
 		return 0;
 	}
@@ -178,12 +197,19 @@ public class SystemSimMain{
 		
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" terminated [Q"+cpuQueueString()+"]");
 		
+		// If there is more in the queue, work on that.
+		if (!cpuQueue.isEmpty()) {
+			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t, cpuQueue.peek());
+			eventQueue.add(newE);
+		}
+		
 		return 0;
 	}
 
 	public static void main(String args[]) {
 		eventQueue = new PriorityQueue<Event>();
 		cpuQueue = new LinkedList<Process>();
+		cpuInUse = false;
 		
 		for (int i=0; i<args.length; i++) {
 			System.out.println(i+": "+args[i]);

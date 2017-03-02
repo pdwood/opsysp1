@@ -16,23 +16,22 @@ public class Process {
 		ioTime = io;
 		
 		remainingCPUBursts= numBursts;
-		cpuEntryTime = arrival;
 	}
 	
-	String getID() {return ID;}
-	int getArrivalTime() {return arrival_time;}
-	int getCPUBurstTime() {return cpuBurstTime;}
-	int getNumberOfBursts() {return numBursts;}
-	int getIOTime() {return ioTime;}
+	public String getID() {return ID;}
+	public int getArrivalTime() {return arrival_time;}
+	public int getCPUBurstTime() {return cpuBurstTime;}
+	public int getNumberOfBursts() {return numBursts;}
+	public int getIOTime() {return ioTime;}
 	
-	int getRemainingCPUTime() {return remainingCPUBursts*cpuBurstTime;}
-	int getRemainingCPUBursts() {return remainingCPUBursts;}
+	public int getRemainingCPUTime() {return remainingCPUBursts*cpuBurstTime;}
+	public int getRemainingCPUBursts() {return remainingCPUBursts;}
+	public String toString() {
+		String ret = "Process "+ID+", "+remainingCPUBursts+" bursts remain. ";
+		return ret;
+	}
 	
-	void executeCPUBurst() {remainingCPUBursts--;}
-	int getIOEntryTime() {return ioEntryTime;}
-	void setIOEntryTime(int s) {ioEntryTime = s;}
-	int getCPUEntryTime() {return cpuEntryTime;}
-	void setCPUEntryTime(int s) {cpuEntryTime = s;}	
+	public void executeCPUBurst() {remainingCPUBursts--;}
 	
 	//<proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
 	private final String ID;
@@ -42,6 +41,5 @@ public class Process {
 	private final int ioTime;
 	
 	private int remainingCPUBursts;
-	private int ioEntryTime, cpuEntryTime;
-		
+	
 };

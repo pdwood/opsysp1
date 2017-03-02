@@ -26,6 +26,10 @@ public class Event implements Comparable<Event> {
 	public int getTime() {return time;}
 	public Process getProcess() {return proc;}
 	public void setProcess(Process process) {proc = process;}
+	public String toString() {
+		String ret = "Event of type: " + type + ", at " + time + " of Process " + proc.getID();
+		return ret;
+	}
 
 	/*public static int compare(Event arg0, Event arg1) {
 		if (arg0.getTime() > arg1.getTime())
