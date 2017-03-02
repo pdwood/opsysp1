@@ -2,6 +2,10 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
 import java.util.Scanner;
+import java.util.Queue;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
 
 /* CSCI 4210 OpSys Project 1
  * 
@@ -46,15 +50,15 @@ public class SystemSimMain{
 		
 		
 		// For each process, make an event of processArrives. 
-		Process p1 = new Process('A', 0, 168, 5, 287);
-		Process p2 = new Process('B', 0, 385, 1, 0);
-		Process p3 = new Process('C', 190, 97, 5, 2499);
-		Process p4 = new Process('D', 250, 1770, 2, 822);
+		Process p1 = new Process("A", 0, 168, 5, 287);
+		Process p2 = new Process("B", 0, 385, 1, 0);
+		Process p3 = new Process("C", 190, 97, 5, 2499);
+		Process p4 = new Process("D", 250, 1770, 2, 822);
 				
-		Event e1 = new Event("Process Arrives", 0, p1);
-		Event e2 = new Event("Process Arrives", 0, p2);
-		Event e3 = new Event("Process Arrives", 190, p3);
-		Event e4 = new Event("Process Arrives", 250, p4);
+		Event e1 = new Event(EventType.ARRIVE, 0, p1);
+		Event e2 = new Event(EventType.ARRIVE, 0, p2);
+		Event e3 = new Event(EventType.ARRIVE, 190, p3);
+		Event e4 = new Event(EventType.ARRIVE, 250, p4);
 		
 		eventQueue.add(e1);
 		eventQueue.add(e2);
@@ -82,21 +86,23 @@ public class SystemSimMain{
 	static int executeEvent() {
 		Event e = eventQueue.remove();
 		t_milli = e.getTime();
-		
-		if (e.getType().equals("Process Arrives")){
-			processArrives(e);
-		}else if (e.getType().equals("Start CPU")){
-			startCPU(e);
-		}else if (e.getType().equals("Complete CPU")){
-			completeCPU(e);
-		}else if (e.getType().equals("Start IO")){
-			startIO(e);
-		}else if (e.getType().equals("Complete IO")){
-			completeIO(e);
-		}else if (e.getType().equals("Terminate Process")){
-			processTerminates(e);
+
+		switch(e.getType()){
+		case ARRIVE:
+			return processArrives(e);
+		case CPUSTART:
+			return startCPU(e);
+		case CPUDONE:
+			return completeCPU(e);
+		case IOSTART:
+			return startIO(e);
+		case IODONE:
+			return completeIO(e);
+		case TERMINATE:
+			return processTerminates(e);
+		default:
+			return -1;
 		}
-		return 0;
 	}
 	
 	static int processArrives(Event e) {
@@ -104,7 +110,7 @@ public class SystemSimMain{
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" arrived [Q"+cpuQueueString()+"]");
 		
 		if (cpuQueue.isEmpty()) {
-			Event newEvent = new Event("Start CPU", t_milli+cs_t/2, e.getProcess());
+			Event newEvent = new Event(EventType.CPUSTART, t_milli+cs_t/2, e.getProcess());
 			eventQueue.add(newEvent);
 		}
 
@@ -118,10 +124,10 @@ public class SystemSimMain{
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" started using the CPU [Q"+cpuQueueString()+"]");
 		
 		if (e.getProcess().getRemainingCPUBursts() > 1) {
-			Event newE = new Event("Complete CPU", t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
+			Event newE = new Event(EventType.CPUDONE, t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
 			eventQueue.add(newE);
 		}else{
-			Event newE = new Event("Terminate Process", t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
+			Event newE = new Event(EventType.TERMINATE, t_milli+e.getProcess().getCPUBurstTime(), e.getProcess());
 			eventQueue.add(newE);
 		}
 		
@@ -134,11 +140,11 @@ public class SystemSimMain{
 		
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" completed a CPU burst; "+e.getProcess().getRemainingCPUBursts()+" to go [Q"+cpuQueueString()+"]");
 		
-		Event newIOEvent = new Event("Start IO", t_milli, e.getProcess());
+		Event newIOEvent = new Event(EventType.IOSTART, t_milli, e.getProcess());
 		eventQueue.add(newIOEvent);
 		
 		if (!cpuQueue.isEmpty()) {
-			Event newE = new Event("Start CPU", t_milli+cs_t, cpuQueue.remove());
+			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t, cpuQueue.remove());
 			eventQueue.add(newE);
 		}
 		
@@ -149,7 +155,7 @@ public class SystemSimMain{
 		
 		System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" blocked on I/O until time "+(t_milli+e.getProcess().getIOTime())+"ms [Q"+cpuQueueString()+"]");
 		
-		Event newE = new Event("Complete IO", t_milli+e.getProcess().getIOTime(), e.getProcess());
+		Event newE = new Event(EventType.IODONE, t_milli+e.getProcess().getIOTime(), e.getProcess());
 		eventQueue.add(newE);
 		
 		return 0;
@@ -161,7 +167,7 @@ public class SystemSimMain{
 		
 		cpuQueue.add(e.getProcess());
 		if (cpuQueue.isEmpty()) {
-			Event newE = new Event("Start CPU", t_milli+cs_t/2, e.getProcess());
+			Event newE = new Event(EventType.CPUSTART, t_milli+cs_t/2, e.getProcess());
 			eventQueue.add(newE);
 		}
 		
