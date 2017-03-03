@@ -20,9 +20,11 @@ import java.util.PriorityQueue;
 public class SystemSimMain{
 	static boolean cpuInUse;
 	static int cs_t=8;
+	static int t_slice=84;
 	static int t_milli=0;
 	static Queue<Process> cpuQueue;
 	static Queue<Event> eventQueue;
+	static AlgorithmType algo;
 
 	public static void parseFile(String filename){
 		try{
@@ -156,6 +158,36 @@ public class SystemSimMain{
 		return 0;
 	}
 	
+	static intPreemptCPU(Event e) {
+		
+		if (algo = SRT) {
+			// Pull the completeCPU out of event queue. 
+			// Set that process's time remaining variable. 
+			// Set completeCPU event for this event instead. 
+		}
+		
+		else if (algo = RR) {
+			// If there is nothing left if the queue: 
+			if (cpuQueue.isEmpty()) {
+				System.out.println("time "+t_milli+": Time slice expired; no preemption because ready queue is empty [Q "+cpuQueueString()+"]")
+				return 0;
+			}
+			
+			// Else:
+			// Pull the completeCPU out of event queue. 
+			// Set that process's time remaining variable. 
+			// Set completeCPU event for this event instead. 
+			// time 640ms: Time slice expired; process B preempted with 133ms to go [Q D C A B]
+			
+		}
+		
+		else { // Weird stuff, shouldn't happen. 
+			System.out.println("ERRRRROROOOORRRRRRORORORRRRRRR!!!. Why are we calling Preempt?");
+		}
+		
+		return 0;
+	}
+	
 	static int completeCPU(Event e) {
 		
 		e.getProcess().executeCPUBurst();
@@ -226,6 +258,7 @@ public class SystemSimMain{
 		}
 		readFile(args[0]);
 		
+		algo = AlgorithmType.SRT;
 		while(!eventQueue.isEmpty()) {
 			executeEvent();
 		}

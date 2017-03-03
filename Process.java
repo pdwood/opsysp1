@@ -31,7 +31,12 @@ public class Process {
 		return ret;
 	}
 	
-	public void executeCPUBurst() {remainingCPUBursts--;}
+	public void executeCPUBurst() {
+		remainingCPUBursts--;
+		timeRemainingThisBurst = cpuBurstTime;
+	}
+	public int getTimeRemainingThisBurst() {return timeRemainingThisBurst;}
+	public void setTimeRemainingThisBurst(int t) {timeRemainingThisBurst = t;}
 	
 	//<proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
 	private final String ID;
@@ -41,5 +46,6 @@ public class Process {
 	private final int ioTime;
 	
 	private int remainingCPUBursts;
+	private int timeRemainingThisBurst;
 	
 };
