@@ -22,6 +22,7 @@ public class SystemSimMain{
 	static int cs_t=8;
 	static int t_slice=84;
 	static int t_milli=0;
+	static Process currentProcess;
 	static Queue<Process> cpuQueue;
 	static Queue<Event> eventQueue;
 	static AlgorithmType algo;
@@ -284,8 +285,40 @@ public class SystemSimMain{
 		return 0;
 	}
 
+	//First step: eject current process from cpu if needed. TODO give this a better name.
+	public static void updateCPU(){
+		//TODO Check if there is a context switch in progress.
+		
+		//If the current process is done with its burst or is being preempted, initiate a context switch.
+		if(currentProcess != null && currentProcess.getRemainingCPUTime() == 0 /* || preemption.isHappening() */){
+			//TODO
+			//Make cooldown, and after cooldown eject current process.
+			//If current process has time remaining in its burst, put it in the queue afterwards;
+			//otherwise, send it to IO.
+			//Could split into startContextSwitch() method.
+		}
+	}
+
+	//Second step: Add to the queue newly-arriving processes or processes that have finished IO.
+	private static void populateQueue(){
+		for(Process p : allProcesses){ // TODO do we have a data structure for all processes, including those that aren't in the queue? We need one.
+			if((p.isInIO() && p.getRemainingTime() == 0) || timestamp == p.getArrivalTime()){
+				processQueue.add(p);
+			}
+		}
+	}
+
+	//Third step: If the CPU is empty, move a process into it and set the cooldown.
+	private static void weNeedToDecideOnAGoodNameForThisMethod(){
+		if(currentProcess == null){
+			currentProcess = processQueue.pop();
+			//Context switch... incorporate delays
+			
+		}
+	}
+
 	public static void main(String args[]) {
-		eventQueue = new PriorityQueue<Event>();
+		//eventQueue = new PriorityQueue<Event>();
 		cpuQueue = new LinkedList<Process>();
 		cpuInUse = false;
 		
@@ -294,11 +327,20 @@ public class SystemSimMain{
 		}
 		parseFile(args[0]);
 		
-		algo = AlgorithmType.SRT;
+		boolean done=false; 
+
+		while(!done){ // TODO Replace this with an appropriate condition...
+			updateCPU();
+			populateQueue();
+			weNeedToDecideOnAGoodNameForThisMethod();
+			//TODO move timer ahead, and handle preemption better
+		}
+
+		/*algo = AlgorithmType.SRT;
 		while(!eventQueue.isEmpty()) {
 			executeEvent();
 			System.out.println("Simulation finished. \n\n");
-		}
+		}*/
 		
 	}
 
