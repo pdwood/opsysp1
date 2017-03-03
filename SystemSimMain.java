@@ -32,8 +32,8 @@ public class SystemSimMain{
 				Process p;
 				if(line.charAt(0)!='#'){
 					p = parse(line);
+					eventQueue.add(new Event(EventType.ARRIVE, p.getArrivalTime(), p));
 					
-					Event e = new Event(EventType.ARRIVE, p.getArrivalTime(), p);
 				}
 				
 			}
@@ -44,7 +44,7 @@ public class SystemSimMain{
 
 
 	public static Process parse(String in){
-		String[] tokens = in.split("|");
+		String[] tokens = in.split("\\|");
 		
 		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
@@ -224,7 +224,7 @@ public class SystemSimMain{
 		for (int i=0; i<args.length; i++) {
 			System.out.println(i+": "+args[i]);
 		}
-		readFile(args[0]);
+		parseFile(args[0]);
 		
 		while(!eventQueue.isEmpty()) {
 			executeEvent();
