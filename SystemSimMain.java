@@ -26,7 +26,7 @@ public class SystemSimMain{
 	static Queue<Event> eventQueue;
 	static AlgorithmType algo;
 
-	public static void parseFile(String filename){
+	private static void parseFile(String filename){
 		try{
 			Scanner input = new Scanner(new File(filename));
 			while(input.hasNextLine()){
@@ -45,14 +45,14 @@ public class SystemSimMain{
 	}
 
 
-	public static Process parse(String in){
+	private static Process parse(String in){
 		String[] tokens = in.split("\\|");
 		
 		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
 	
-	static int readFile(String filename) {
+	/*static int readFile(String filename) {
 		// Read all the processes. 
 		
 		
@@ -74,9 +74,9 @@ public class SystemSimMain{
 		eventQueue.add(e4);
 		
 		return 0;
-	}
+	}*/
 
-	static String cpuQueueString() {
+	private static String getQueueDescription() {
 		
 		if (cpuQueue.size() == 0)
 			return " empty";
