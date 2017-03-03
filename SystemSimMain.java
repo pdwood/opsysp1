@@ -91,6 +91,20 @@ public class SystemSimMain{
 		return retVal;
 	}
 	
+	static void organizeCPUQueue() {
+		if (algo == AlgorithmType.SRT) {
+			
+		}
+		
+		else if (algo == AlgorithmType.RR) {
+			
+		}
+		
+		else {
+			System.out.println("ERRRRRROR!!!!! ABANDON SHIP!!");
+		}
+	}
+	
 	static int executeEvent() {
 		Event e = eventQueue.remove();
 		t_milli = e.getTime();
@@ -120,6 +134,7 @@ public class SystemSimMain{
 			return startIO(e);
 		case IODONE:
 			return completeIO(e);
+			
 		case TERMINATE:
 			return processTerminates(e);
 		default:
@@ -158,25 +173,46 @@ public class SystemSimMain{
 		return 0;
 	}
 	
-	static intPreemptCPU(Event e) {
+	static int preemptCPU(Event e) {
 		
-		if (algo = SRT) {
-			// Pull the completeCPU out of event queue. 
-			// Set that process's time remaining variable. 
-			// Set completeCPU event for this event instead. 
+		if (algo == AlgorithmType.SRT) {
+			// Pull the completeCPU out of event queue.
+			Event[] eventQueueArray = (Event[])eventQueue.toArray();
+			int completeCPUIndex = -1;
+			Event completeCPUEvent;
+			
+			for (int i=0; i<eventQueueArray.length; i++) {
+				if (eventQueueArray[i].getType() == EventType.CPUDONE) {
+					completeCPUIndex = i;
+					break;
+				}
+			}
+			completeCPUEvent = eventQueueArray[completeCPUIndex];
+			
+			// Set that process's time remaining variable.
+			int remTime = completeCPUEvent.getTime()-t_milli;
+			completeCPUEvent.getProcess().setTimeRemainingThisBurst(remTime);
+			
+			// Put the preempted process back into the cpu queue.
+			cpuQueue.add(completeCPUEvent.getProcess());
+			organizeCPUQueue();
+			
+			// Set completeCPU event for this event instead.
+			System.out.println("time "+t_milli+"ms: Process "+e.getProcess().getID()+" arrived and will preempt "+completeCPUEvent.getProcess().getID()+" [Q "+cpuQueueString()+"]");
+			Event newEvent = new Event(EventType.CPUSTART, t_milli+cs_t/2, e.getProcess());
 		}
 		
-		else if (algo = RR) {
-			// If there is nothing left if the queue: 
+		else if (algo == AlgorithmType.RR) {
+			// If there is nothing left if the queue:
 			if (cpuQueue.isEmpty()) {
-				System.out.println("time "+t_milli+": Time slice expired; no preemption because ready queue is empty [Q "+cpuQueueString()+"]")
+				System.out.println("time "+t_milli+": Time slice expired; no preemption because ready queue is empty [Q "+cpuQueueString()+"]");
 				return 0;
 			}
 			
 			// Else:
-			// Pull the completeCPU out of event queue. 
-			// Set that process's time remaining variable. 
-			// Set completeCPU event for this event instead. 
+			// Pull the completeCPU out of event queue.
+			// Set that process's time remaining variable.
+			// Set completeCPU event for this event instead.
 			// time 640ms: Time slice expired; process B preempted with 133ms to go [Q D C A B]
 			
 		}
@@ -261,9 +297,9 @@ public class SystemSimMain{
 		algo = AlgorithmType.SRT;
 		while(!eventQueue.isEmpty()) {
 			executeEvent();
+			System.out.println("Simulation finished. \n\n");
 		}
 		
-		System.out.println("Simulation finished. ");
 	}
 
 }
