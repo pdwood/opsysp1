@@ -1,3 +1,5 @@
+package project1;
+
 /* CSCI 4210 OpSys Project 1
  * 
  * Made By: 
@@ -8,13 +10,22 @@
  */
 
 public class Process {
+	//<proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
+	private final String ID;
+	private final int arrival_time;
+	private final int cpuBurstTime;
+	private final int numBursts;
+	private final int ioTime;
+	private int remainingCPUBursts;
+	private int timeRemaining; 
+		
 	public Process(String id, int arrival, int burstTime, int bursts, int io) {
 		ID = id;
 		arrival_time = arrival;
 		cpuBurstTime = burstTime;
 		numBursts = bursts;
 		ioTime = io;
-		
+		timeRemaining = burstTime;
 		remainingCPUBursts= numBursts;
 	}
 	
@@ -31,21 +42,5 @@ public class Process {
 		return ret;
 	}
 	
-	public void executeCPUBurst() {
-		remainingCPUBursts--;
-		timeRemainingThisBurst = cpuBurstTime;
-	}
-	public int getTimeRemainingThisBurst() {return timeRemainingThisBurst;}
-	public void setTimeRemainingThisBurst(int t) {timeRemainingThisBurst = t;}
-	
-	//<proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
-	private final String ID;
-	private final int arrival_time;
-	private final int cpuBurstTime;
-	private final int numBursts;
-	private final int ioTime;
-	
-	private int remainingCPUBursts;
-	private int timeRemainingThisBurst;
 	
 };
