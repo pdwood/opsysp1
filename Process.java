@@ -17,8 +17,9 @@ public class Process {
 	private final int numBursts;
 	private final int ioTime;
 	private int remainingCPUBursts;
-	private int timeRemaining; 
-		
+	private int timeRemaining;
+	private int IOEntryTime;
+	
 	public Process(String id, int arrival, int burstTime, int bursts, int io) {
 		ID = id;
 		arrival_time = arrival;
@@ -27,6 +28,7 @@ public class Process {
 		ioTime = io;
 		timeRemaining = burstTime;
 		remainingCPUBursts= numBursts;
+		IOEntryTime = 0;
 	}
 	
 	public String getID() {return ID;}
@@ -34,13 +36,17 @@ public class Process {
 	public int getCPUBurstTime() {return cpuBurstTime;}
 	public int getNumberOfBursts() {return numBursts;}
 	public int getIOTime() {return ioTime;}
+	public int getIOExitTime() {
+		return IOEntryTime+ioTime;
+	}
+	public void setIOEntryTime(int t) {
+		IOEntryTime = t;
+	}
 	
 	public int getRemainingCPUTime() {return remainingCPUBursts*cpuBurstTime;}
 	public int getRemainingCPUBursts() {return remainingCPUBursts;}
 	public String toString() {
-		String ret = "Process "+ID+", "+remainingCPUBursts+" bursts remain. ";
-		return ret;
-	}
+		return ("Process "+ID+", "+remainingCPUBursts+" bursts remain. ");}
 	
 	
 };
