@@ -6,29 +6,82 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.PriorityQueue;
 import java.util.Scanner;
 
 
 public class SimMain {
 	
-	private static Process CPU;
+	private static Process currentProcess;
 	private static int cooldown; //time until the cpu can be used (because of context switching)
-	private static LinkedList<Process> queue;
-	private static LinkedList<Process> IO;
-	private static LinkedList<Process> outside;
+	private static PriorityQueue<Process> queue;
+	private static LinkedList<Process> io;
+	private static PriorityQueue<Process> outside;
 	private static int contextSwitchTime = 8;
 	private static int timeToNextEvent;
-	private static int currentTime;
+	private static int timestamp;
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		queue = new LinkedList<Process>();
-		IO = new LinkedList<Process>();
-		outside = new LinkedList<Process>();
+
+
+		queue = new PriorityQueue<Process>();
+		io = new PriorityQueue<Process>(11, new Comparator<Process>{
+			public int compare(Process a, Process b){
+				return a.getRemainingTime() - b.getRemainingTime();
+			}
+		};
+		//Outside should be queue sorted by arrival time
+		outside = new PriorityQueue<Process>(11, new Comparator<Process>{
+			public int compare(Process a, Process b){
+				return a.getArrivalTime() - b.getArrivalTime();
+			}
+		});
 		
-		
+		parseFile(args[0]);
+
+		timestamp=0;
+
+		while(true){
+
+			//TODO Account for context switch!
+
+			if(outside.peek()!=null && outside.peek().getArrivalTime() == timestamp){
+				queue.add(outside.poll());
+			}		
+
+			if(currentProcess == null || currentProcess.getRemainingTime() == 0 || shouldPreempt()){
+				contextSwitch();
+			}
+
+			int timeDelta = queryNextEvent();
+			if(timeDelta == Integer.MAX_VALUE) break;
+		}
 	}
 	
+	/**
+	 * Returns the timestamp of the next point the simulation should advance to, and
+	 * updates the remaining time of each process.
+	 * TODO argue about whether updating should be broken into a different method
+	 */
+	private static int queryNextEvent(){
+		//(May be difficult for SRT...)
+
+		//Possible next events: Outside arrival, process finishing CPU, process finishing IO, others? ... SRT preemption, but that is weird.
+		int timeDelta=Integer.MAX_VALUE;
+		if(outside.size() > 0) timeDelta = outside.peek().getArrivalTime - timestamp;
+		if(currentProcess != null && currentProcess.getRemainingTime() < timeDelta) timeDelta = currentProcess.getRemainingTime();
+		if(io.size() > 0 && io.peek().getRemainingTime() < timeDelta) timeDelta = io.peek().getRemainingTime();
+		if(cooldown > 0 && cooldown < timeDelta) timeDelta = cooldown;
+
+	}
+
+	private static void updateTimestamps(int timeDelta){
+		if(currentProcess != null) currentProcess.decrementTime(timeDelta);
+		for(Process p : io) p.decrementTime(timeDelta);
+		timestamp += timeDelta;
+		if(cooldown >= timeDelta) cooldown -= timeDelta;
+	}
+
 	/**
 	 * Parse process data from a file, create new processes with the data.
 	 * Push new processes to the Outside queue.
@@ -87,7 +140,7 @@ public class SimMain {
 		
 		if (debugging) {
 			System.out.print(currentTime+": IO List before update: ");
-			iter = IO.iterator();
+			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
 				System.out.print(p.getIOExitTime()+", ");
@@ -95,7 +148,7 @@ public class SimMain {
 			System.out.println("");
 		}
 		
-		iter = IO.iterator();
+		iter = io.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if (p.getIOExitTime() <= currentTime) {
@@ -106,7 +159,7 @@ public class SimMain {
 		
 		if (debugging) {
 			System.out.print(currentTime+": IO List after update: ");
-			iter = IO.iterator();
+			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
 				System.out.print(p.getIOExitTime()+", ");
@@ -134,7 +187,7 @@ public class SimMain {
 			System.out.println("");
 		}
 		
-		iter = IO.iterator();
+		iter = io.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
@@ -145,7 +198,7 @@ public class SimMain {
 		
 		if (debugging) {
 			System.out.print(currentTime+": outside List after update: ");
-			iter = IO.iterator();
+			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
 				System.out.print(p.getArrivalTime()+", ");
