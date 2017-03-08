@@ -10,7 +10,7 @@ import java.util.PriorityQueue;
 import java.util.Scanner;
 import java.util.Comparator;
 
-public class SimMain {
+public class Project1 {
 	
 	private static Process currentProcess;
 	private static int cooldown; //time until the cpu can be used (because of context switching)
