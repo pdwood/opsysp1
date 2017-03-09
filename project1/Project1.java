@@ -3,6 +3,7 @@ package project1;
 import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -118,7 +119,6 @@ public class Project1 {
 		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
-	/*
 	/**
 	 * If the cpu is empty, do nothing.
 	 * If the cpu is on cooldown, reduce cooldown.
@@ -128,7 +128,7 @@ public class Project1 {
 	 * 
 	 * Update timeToNextEvent if necessary.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateCPU(int elapsedTime){
 		
 		
@@ -138,7 +138,7 @@ public class Project1 {
 	 * Reduce remaining IO time for all processes in IO.
 	 * --If any processes are finished with IO, move them to the queue
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateIO(){
 		Iterator<Process> iter;
 		boolean debugging = false;
@@ -148,7 +148,7 @@ public class Project1 {
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
-				System.out.print(p.getIOExitTime()+", ");
+				System.out.print(p.getNextStateChange()+", ");
 			}
 			System.out.println("");
 		}
@@ -156,7 +156,7 @@ public class Project1 {
 		iter = io.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
-			if (p.getIOExitTime() <= currentTime) {
+			if (p.getNextStateChange() <= currentTime) {
 				queue.add(p);
 				iter.remove();
 			}
@@ -167,7 +167,7 @@ public class Project1 {
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
-				System.out.print(p.getIOExitTime()+", ");
+				System.out.print(p.getNextStateChange()+", ");
 			}
 			System.out.println("");
 		}
@@ -177,7 +177,7 @@ public class Project1 {
 	/**
 	 * Move processes to the queue if it is time for the process to enter.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateOutside(){
 		Iterator<Process> iter;
 		boolean debugging = false;
@@ -218,9 +218,8 @@ public class Project1 {
 	 * Check for preemption
 	 * --Initiate context switch if necessary
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateQueue(){
 		
 	}
-	*/
 };
