@@ -25,7 +25,7 @@ public class Project1 {
 	public static void main(String[] args) {
 
 		//initialize local variables
-		queue = new LinkedList<Process>(); //TODO this should be dynamic
+		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
@@ -47,13 +47,11 @@ public class Project1 {
 		while(true){
 			//TODO Account for context switch!
 
-			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime){
-				queue.add(outside.poll());
-			}		
+			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime)
+				queue.add(outside.poll());		
 
-			if(currentProcess == null || currentProcess.getRemainingCPUTime() == 0 || shouldPreempt()){
+			if(currentProcess == null || currentProcess.getRemainingCPUTime() == 0 || shouldPreempt())
 				contextSwitch();
-			}
 
 			int timeDelta = queryNextEvent();
 			if(timeDelta == Integer.MAX_VALUE) break;
