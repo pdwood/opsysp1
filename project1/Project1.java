@@ -26,15 +26,15 @@ public class Project1 {
 
 	public static void main(String[] args) {
 
-
+		//initialize local variables
 		queue = new PriorityQueue<Process>();
-		io = new PriorityQueue<Process>(11, new Comparator<Process>(){
+		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
-				return a.getRemainingTime() - b.getRemainingTime();
+				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
 			}
 		});
 		//Outside should be queue sorted by arrival time
-		outside = new PriorityQueue<Process>(11, new Comparator<Process>(){
+		outside = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getArrivalTime() - b.getArrivalTime();
 			}
@@ -52,12 +52,13 @@ public class Project1 {
 				queue.add(outside.poll());
 			}		
 
-			if(currentProcess == null || currentProcess.getRemainingTime() == 0 || shouldPreempt()){
+			if(currentProcess == null || currentProcess.getRemainingCPUTime() == 0 || shouldPreempt()){
 				contextSwitch();
 			}
 
 			int timeDelta = queryNextEvent();
 			if(timeDelta == Integer.MAX_VALUE) break;
+			updateTimestamps(timeDelta);
 		}
 	}
 	
@@ -70,8 +71,8 @@ public class Project1 {
 		//Possible next events: Outside arrival, process finishing CPU, process finishing IO, others? ... SRT preemption, but that is weird.
 		int timeDelta=Integer.MAX_VALUE;
 		if(outside.size() > 0) timeDelta = outside.peek().getArrivalTime() - currentTime;
-		if(currentProcess != null && currentProcess.getRemainingTime() < timeDelta) timeDelta = currentProcess.getRemainingTime();
-		if(io.size() > 0 && io.peek().getRemainingTime() < timeDelta) timeDelta = io.peek().getRemainingTime();
+		if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) timeDelta = currentProcess.getRemainingCPUTime();
+		if(io.size() > 0 && io.peek().getRemainingCPUTime() < timeDelta) timeDelta = io.peek().getRemainingCPUTime();
 		if(cooldown > 0 && cooldown < timeDelta) timeDelta = cooldown;
 		
 		return timeDelta;
