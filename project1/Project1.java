@@ -23,12 +23,12 @@ public class Project1 {
 	private static int contextSwitchTime = 6;
 	private static int timeToNextEvent;
 	private static int currentTime;
-
+	
 	private static boolean shouldPreempt(){ return false; } //TODO
 	private static void contextSwitch() {} //TODO
-
+	
 	public static void main(String[] args) {
-
+		
 		//initialize local variables
 		queue = new LinkedList<Process>(); //TODO this should be dynamic
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
@@ -45,21 +45,21 @@ public class Project1 {
 		
 		//retrieve process information from file
 		parseFile(args[0]);
-
+		
 		currentTime=0;
-
+		
 		//running loop for the program, loops until all processes have completed
 		while(true){
 			//TODO Account for context switch!
-
+			
 			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime){
 				queue.add(outside.poll());
-			}		
-
+			}
+			
 			if(currentProcess == null || currentProcess.getRemainingCPUTime() == 0 || shouldPreempt()){
 				contextSwitch();
 			}
-
+			
 			int timeDelta = queryNextEvent();
 			if(timeDelta == Integer.MAX_VALUE) break;
 			updateTimestamps(timeDelta);
@@ -71,7 +71,7 @@ public class Project1 {
 	 */
 	private static int queryNextEvent(){
 		//(May be difficult for SRT...)
-
+		
 		//Possible next events: Outside arrival, process finishing CPU, process finishing IO, others? ... SRT preemption, but that is weird.
 		int timeDelta=Integer.MAX_VALUE;
 		if(outside.size() > 0) timeDelta = outside.peek().getArrivalTime() - currentTime;
@@ -81,7 +81,7 @@ public class Project1 {
 		
 		return timeDelta;
 	}
-
+	
 	/**
 	 * Updates the remaining times of process in CPU
 	 */
@@ -90,7 +90,7 @@ public class Project1 {
 		currentTime += timeDelta;
 		if(cooldown >= timeDelta) cooldown -= timeDelta;
 	}
-
+	
 	/**
 	 * Parse process data from a file, create new processes with the data.
 	 * Push new processes to the Outside queue.
