@@ -1,5 +1,3 @@
-package project1;
-
 /* CSCI 4210 OpSys Project 1
  * 
  * Made By: 
