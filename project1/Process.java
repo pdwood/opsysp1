@@ -39,7 +39,7 @@ public class Process{
 	public void decrementTime(int time){ timeRemaining-=time; }
 	public void decrementBursts() {remainingCPUBursts--;}
 	public void setStateChangeTime(int t) {stateChangeTime = t;}
-
+	
 	public int getNextStateChange() {return stateChangeTime;}
 	public int getRemainingCPUTime() {return timeRemaining;}
 	public int getRemainingCPUBursts() {return remainingCPUBursts;}

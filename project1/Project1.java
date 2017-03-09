@@ -16,7 +16,11 @@ public class Project1 {
 	private static Queue<Process> queue;
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
-	private static int contextSwitchTime = 8;
+	private static Queue<Process> finished;
+	
+	private static int csCount = 0;
+	private static int preemptCount = 0;
+	private static int contextSwitchTime = 6;
 	private static int timeToNextEvent;
 	private static int currentTime;
 
@@ -79,11 +83,10 @@ public class Project1 {
 	}
 
 	/**
-	 * Updates the current times, and the remaining times of every process in IO or CPU
+	 * Updates the remaining times of process in CPU
 	 */
 	private static void updateTimestamps(int timeDelta){
 		if(currentProcess != null) currentProcess.decrementTime(timeDelta);
-		for(Process p : io) p.decrementTime(timeDelta);
 		currentTime += timeDelta;
 		if(cooldown >= timeDelta) cooldown -= timeDelta;
 	}
@@ -125,6 +128,9 @@ public class Project1 {
 	 * --If the cooldown is complete, clear the cooldown and move process or start the burst
 	 * Else, reduce the current process's remaining burst time.
 	 * --If the burst is finished, initiate a context switch.
+	 * --If a process is leaving the CPU, add it to the finished queue, 
+	 *    Set it's nextStateChange variable to be the time it left, +0.5 of a
+	 *    context switch time.
 	 * 
 	 * Update timeToNextEvent if necessary.
 	 * @param elapsedTime the amount of time since the last cpu update
@@ -216,10 +222,38 @@ public class Project1 {
 	/**
 	 * Check if cpu is empty
 	 * Check for preemption
-	 * --Initiate context switch if necessary
+	 * -- If there was a preemption, increment the preemption counter.
+	 * Initiate context switch if necessary
+	 * -- If there was a context switch, increment the context switch counter.
 	 * @param elapsedTime the amount of time since the last cpu update
 	 */
 	private static void updateQueue(){
 		
 	}
+	
+	private static String generateStatistics(String algo) {
+		String retVal = "Algorithm "+algo+"\n";
+		double avgBurst=0, avgWait=0, avgTurn=0;
+		Iterator<Process> iter = finished.iterator();
+		while (iter.hasNext()) {
+			Process p = iter.next();
+			
+			avgBurst += p.getCPUBurstTime();
+			avgWait += p.getNextStateChange()-p.getArrivalTime();
+		}
+		
+		avgBurst = avgBurst/finished.size();
+		
+		retVal += "-- average CPU burst time: "+avgBurst+"\n";
+		retVal += "-- average wait time: "+avgWait+"\n";
+		retVal += "-- average turnaround time: "+avgTurn+"\n";
+		retVal += "-- total number of context switches: "+csCount+"\n";
+		retVal += "-- total number of preemptions: "+preemptCount+"\n";
+		
+		return retVal;
+	}
+	
+	
+	
+	
 };
