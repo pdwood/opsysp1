@@ -30,7 +30,7 @@ public class Project1 {
 	public static void main(String[] args) {
 		
 		//initialize local variables
-		queue = new LinkedList<Process>(); //TODO this should be dynamic
+		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
