@@ -1,20 +1,18 @@
 package project1;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.PriorityQueue;
-import java.util.Scanner;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Scanner;
 
 public class Project1 {
 	
 	private static Process currentProcess;
 	private static int cooldown; //time until the cpu can be used (because of context switching)
-	private static PriorityQueue<Process> queue;
+	private static Queue<Process> queue;
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
 	private static int contextSwitchTime = 8;
@@ -27,7 +25,7 @@ public class Project1 {
 	public static void main(String[] args) {
 
 		//initialize local variables
-		queue = new PriorityQueue<Process>();
+		queue = new LinkedList<Process>();
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
