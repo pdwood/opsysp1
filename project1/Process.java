@@ -35,6 +35,7 @@ public class Process{
 	public int getArrivalTime() {return arrival_time;}
 	public int getCPUBurstTime() {return cpuBurstTime;}
 	public int getNumberOfBursts() {return numBursts;}
+	public int getIOTime() {return ioTime;}
 	
 	public void decrementTime(int time){ timeRemaining-=time; }
 	public void decrementBursts() {remainingCPUBursts--;}

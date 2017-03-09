@@ -94,7 +94,8 @@ public class Project1 {
 		//(May be difficult for SRT...)
 		int timeDelta=Integer.MAX_VALUE;
 		
-		//Possible next events: Outside arrival, process finishing CPU, process finishing IO, others? ... SRT preemption, but that is weird.
+		//Possible next events: Outside arrival, process finishing CPU, process
+		//finishing IO, others? ... SRT preemption, but that is weird.
 		if(outside.size() > 0) {
 			timeDelta = outside.peek().getArrivalTime() - currentTime;
 		}
@@ -120,7 +121,8 @@ public class Project1 {
 	}
 	
 	/**
-	 * Updates the remaining times of process in CPU
+	 * Updates the current time variable. This really shouldn't be a method of
+	 * it's own. We will discuss this tonight. 
 	 */
 	private static void updateTimestamps(int timeDelta){
 		/* These line is getting removed, as it belongs to the CPU 
@@ -175,6 +177,50 @@ public class Project1 {
 	 * @param elapsedTime the amount of time since the last cpu update
 	 */
 	private static void updateCPU(int elapsedTime){
+		
+		
+		// If there is something in the processor and it isn't working on a CS.
+		if (currentProcess != null && cooldown == 0) {
+			currentProcess.decrementTime(elapsedTime);
+			
+			// If the current process is done with it's current CPU Burst...
+			if (currentProcess.getRemainingCPUTime() <= 0) {
+				currentProcess.decrementBursts();
+				
+				/* If it has bursts remaining, move it to the IO. */
+				if (currentProcess.getRemainingCPUBursts() != 0) {
+					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
+					io.add(currentProcess);
+				}
+				
+				/* If it has finished all bursts, set nextStateChange variable
+				 * appropriately, and move it to the finished queue. */
+				if (currentProcess.getRemainingCPUBursts() == 0) {
+					currentProcess.setStateChangeTime(currentTime+contextSwitchTime/2);
+					finished.add(currentProcess);
+				}
+				
+				/* Set the processor to null, and the cooldown to cs/2 + elapsedTime 
+				 * The +elapsedTime is sort of a hack around the fact that 
+				 * the next if statement decrements it, but it has to be in 
+				 * this order. */
+				currentProcess = null;
+				cooldown = (contextSwitchTime/2)+elapsedTime;
+			}
+		}
+		
+		// If the processor is warming up/cooling down from a context switch.
+		if (cooldown > 0) {
+			cooldown = cooldown - elapsedTime;
+		}
+		
+		// If there is nothing in the processor, and the processor is done cooling down
+		if (currentProcess == null && cooldown == 0) {
+			// If there is something in the queue, pop it in the processor, and
+			// have half a cs switch to get it into the processor.
+			cooldown = contextSwitchTime/2;
+			currentProcess = queue.poll();
+		}
 		
 		
 	}
@@ -263,7 +309,6 @@ public class Project1 {
 	 * -- If there was a preemption, increment the preemption counter.
 	 * Initiate context switch if necessary
 	 * -- If there was a context switch, increment the context switch counter.
-	 * @param elapsedTime the amount of time since the last cpu update
 	 */
 	private static void updateQueue(){
 		
