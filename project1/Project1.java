@@ -3,6 +3,7 @@ package project1;
 import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -15,7 +16,11 @@ public class Project1 {
 	private static Queue<Process> queue;
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
-	private static int contextSwitchTime = 8;
+	private static Queue<Process> finished;
+	
+	private static int csCount = 0;
+	private static int preemptCount = 0;
+	private static int contextSwitchTime = 6;
 	private static int timeToNextEvent;
 	private static int currentTime;
 
@@ -76,11 +81,10 @@ public class Project1 {
 	}
 
 	/**
-	 * Updates the current times, and the remaining times of every process in IO or CPU
+	 * Updates the remaining times of process in CPU
 	 */
 	private static void updateTimestamps(int timeDelta){
 		if(currentProcess != null) currentProcess.decrementTime(timeDelta);
-		for(Process p : io) p.decrementTime(timeDelta);
 		currentTime += timeDelta;
 		if(cooldown >= timeDelta) cooldown -= timeDelta;
 	}
@@ -116,17 +120,19 @@ public class Project1 {
 		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
-	/*
 	/**
 	 * If the cpu is empty, do nothing.
 	 * If the cpu is on cooldown, reduce cooldown.
 	 * --If the cooldown is complete, clear the cooldown and move process or start the burst
 	 * Else, reduce the current process's remaining burst time.
 	 * --If the burst is finished, initiate a context switch.
+	 * --If a process is leaving the CPU, add it to the finished queue, 
+	 *    Set it's nextStateChange variable to be the time it left, +0.5 of a
+	 *    context switch time.
 	 * 
 	 * Update timeToNextEvent if necessary.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateCPU(int elapsedTime){
 		
 		
@@ -136,7 +142,7 @@ public class Project1 {
 	 * Reduce remaining IO time for all processes in IO.
 	 * --If any processes are finished with IO, move them to the queue
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateIO(){
 		Iterator<Process> iter;
 		boolean debugging = false;
@@ -146,7 +152,7 @@ public class Project1 {
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
-				System.out.print(p.getIOExitTime()+", ");
+				System.out.print(p.getNextStateChange()+", ");
 			}
 			System.out.println("");
 		}
@@ -154,7 +160,7 @@ public class Project1 {
 		iter = io.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
-			if (p.getIOExitTime() <= currentTime) {
+			if (p.getNextStateChange() <= currentTime) {
 				queue.add(p);
 				iter.remove();
 			}
@@ -165,7 +171,7 @@ public class Project1 {
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
-				System.out.print(p.getIOExitTime()+", ");
+				System.out.print(p.getNextStateChange()+", ");
 			}
 			System.out.println("");
 		}
@@ -175,7 +181,7 @@ public class Project1 {
 	/**
 	 * Move processes to the queue if it is time for the process to enter.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateOutside(){
 		Iterator<Process> iter;
 		boolean debugging = false;
@@ -214,11 +220,38 @@ public class Project1 {
 	/**
 	 * Check if cpu is empty
 	 * Check for preemption
-	 * --Initiate context switch if necessary
+	 * -- If there was a preemption, increment the preemption counter.
+	 * Initiate context switch if necessary
+	 * -- If there was a context switch, increment the context switch counter.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 *
+	 */
 	private static void updateQueue(){
 		
 	}
-	*/
+	
+	private static String generateStatistics(String algo) {
+		String retVal = "Algorithm "+algo+"\n";
+		double avgBurst=0, avgWait=0, avgTurn=0;
+		Iterator<Process> iter = finished.iterator();
+		while (iter.hasNext()) {
+			Process p = iter.next();
+			
+			avgBurst += p.getCPUBurstTime();
+			avgWait += p.getNextStateChange()-p.getArrivalTime();
+		}
+		
+		avgBurst = avgBurst/finished.size();
+		
+		retVal += "-- average CPU burst time: "+avgBurst+"\n";
+		retVal += "-- average wait time: "+avgWait+"\n";
+		retVal += "-- average turnaround time: "+avgTurn+"\n";
+		retVal += "-- total number of context switches: "+csCount+"\n";
+		retVal += "-- total number of preemptions: "+preemptCount+"\n";
+		
+		return retVal;
+	}
+	
+	
+	
+	
 };
