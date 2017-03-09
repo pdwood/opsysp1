@@ -25,7 +25,7 @@ public class Project1 {
 	public static void main(String[] args) {
 
 		//initialize local variables
-		queue = new LinkedList<Process>();
+		queue = new LinkedList<Process>(); //TODO this should be dynamic
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
@@ -38,12 +38,13 @@ public class Project1 {
 			}
 		});
 		
+		//retrieve process information from file
 		parseFile(args[0]);
 
 		currentTime=0;
 
+		//running loop for the program, loops until all processes have completed
 		while(true){
-
 			//TODO Account for context switch!
 
 			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime){
@@ -102,8 +103,8 @@ public class Project1 {
 					p = parse(line);
 					outside.add(p);
 				}
-				
 			}
+			input.close();
 		}catch(IOException e){
 			System.err.println("ERROR: Cannot read file "+filename+" ("+e.getMessage()+")");
 		}
