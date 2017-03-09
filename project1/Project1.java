@@ -120,6 +120,10 @@ public class Project1 {
 		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
+	
+	//////////////////////Previously commented///////////////////////////////
+	
+	
 	/**
 	 * If the cpu is empty, do nothing.
 	 * If the cpu is on cooldown, reduce cooldown.
