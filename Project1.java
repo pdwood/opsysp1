@@ -8,30 +8,33 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.PriorityQueue;
 import java.util.Scanner;
+import java.util.Comparator;
 
-
-public class SimMain {
+public class Project1 {
 	
 	private static Process currentProcess;
 	private static int cooldown; //time until the cpu can be used (because of context switching)
 	private static PriorityQueue<Process> queue;
-	private static LinkedList<Process> io;
+	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
 	private static int contextSwitchTime = 8;
 	private static int timeToNextEvent;
-	private static int timestamp;
+	private static int currentTime;
+
+	private static boolean shouldPreempt(){ return false; } //TODO
+	private static void contextSwitch() {} //TODO
 
 	public static void main(String[] args) {
 
 
 		queue = new PriorityQueue<Process>();
-		io = new PriorityQueue<Process>(11, new Comparator<Process>{
+		io = new PriorityQueue<Process>(11, new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getRemainingTime() - b.getRemainingTime();
 			}
-		};
+		});
 		//Outside should be queue sorted by arrival time
-		outside = new PriorityQueue<Process>(11, new Comparator<Process>{
+		outside = new PriorityQueue<Process>(11, new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getArrivalTime() - b.getArrivalTime();
 			}
@@ -39,13 +42,13 @@ public class SimMain {
 		
 		parseFile(args[0]);
 
-		timestamp=0;
+		currentTime=0;
 
 		while(true){
 
 			//TODO Account for context switch!
 
-			if(outside.peek()!=null && outside.peek().getArrivalTime() == timestamp){
+			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime){
 				queue.add(outside.poll());
 			}		
 
@@ -59,26 +62,28 @@ public class SimMain {
 	}
 	
 	/**
-	 * Returns the timestamp of the next point the simulation should advance to, and
-	 * updates the remaining time of each process.
-	 * TODO argue about whether updating should be broken into a different method
+	 * Returns the timestamp of the next point the simulation should advance to
 	 */
 	private static int queryNextEvent(){
 		//(May be difficult for SRT...)
 
 		//Possible next events: Outside arrival, process finishing CPU, process finishing IO, others? ... SRT preemption, but that is weird.
 		int timeDelta=Integer.MAX_VALUE;
-		if(outside.size() > 0) timeDelta = outside.peek().getArrivalTime - timestamp;
+		if(outside.size() > 0) timeDelta = outside.peek().getArrivalTime() - currentTime;
 		if(currentProcess != null && currentProcess.getRemainingTime() < timeDelta) timeDelta = currentProcess.getRemainingTime();
 		if(io.size() > 0 && io.peek().getRemainingTime() < timeDelta) timeDelta = io.peek().getRemainingTime();
 		if(cooldown > 0 && cooldown < timeDelta) timeDelta = cooldown;
-
+		
+		return timeDelta;
 	}
 
+	/**
+	 * Updates the current times, and the remaining times of every process in IO or CPU
+	 */
 	private static void updateTimestamps(int timeDelta){
 		if(currentProcess != null) currentProcess.decrementTime(timeDelta);
 		for(Process p : io) p.decrementTime(timeDelta);
-		timestamp += timeDelta;
+		currentTime += timeDelta;
 		if(cooldown >= timeDelta) cooldown -= timeDelta;
 	}
 
@@ -113,7 +118,7 @@ public class SimMain {
 		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
-	
+	/*
 	/**
 	 * If the cpu is empty, do nothing.
 	 * If the cpu is on cooldown, reduce cooldown.
@@ -123,7 +128,7 @@ public class SimMain {
 	 * 
 	 * Update timeToNextEvent if necessary.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 */
+	 *
 	private static void updateCPU(int elapsedTime){
 		
 		
@@ -133,7 +138,7 @@ public class SimMain {
 	 * Reduce remaining IO time for all processes in IO.
 	 * --If any processes are finished with IO, move them to the queue
 	 * @param elapsedTime the amount of time since the last cpu update
-	 */
+	 *
 	private static void updateIO(){
 		Iterator<Process> iter;
 		boolean debugging = false;
@@ -172,7 +177,7 @@ public class SimMain {
 	/**
 	 * Move processes to the queue if it is time for the process to enter.
 	 * @param elapsedTime the amount of time since the last cpu update
-	 */
+	 *
 	private static void updateOutside(){
 		Iterator<Process> iter;
 		boolean debugging = false;
@@ -213,9 +218,9 @@ public class SimMain {
 	 * Check for preemption
 	 * --Initiate context switch if necessary
 	 * @param elapsedTime the amount of time since the last cpu update
-	 */
+	 *
 	private static void updateQueue(){
 		
 	}
-
+	*/
 };
