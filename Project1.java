@@ -6,7 +6,9 @@
  * Peter Wood woodp
  * Gavin Petilli petilg
 */
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -30,31 +32,38 @@ public class Project1 {
 	private static int contextSwitchTime = 6;
 	private static int currentTime;
 	
+	private static BufferedWriter fileOut;
+	
 	//Enum for CPU state
 	private enum State{
 		WAITING, EMPTYING, INITIALIZING;
 	}
-	private static State preemptState = State.WAITING;
-	
+	private static State preemptState = State.WAITING;	
 	
 	//Enum for the different algorithms
 	private enum Algorithm{
-		FCFS ("FCFS"), 
-		SRT ("SRT"),
-		RR ("RR");
-		
-		private final String name;
-		private Algorithm(String s) {
-	        name = s;
-	    }
-		public String toString() {
-		       return this.name;
-		}
+		FCFS, SRT, RR;
+		//toString returns the declared name of the constant by default
 	}
 	private static Algorithm currentAlg;
 	
-	
 	public static void main(String[] args) {
+		
+		//Ensure files are correct before starting
+		if (args.length == 0) {
+			System.err.println("ERROR: No input file given.");
+			return;
+		}else if(args.length == 1){
+			System.err.println("ERROR: No output file given.");
+		}
+		
+		//Open the output file
+		try {
+			fileOut = new BufferedWriter(new FileWriter(new File(args[1])));
+		} catch (IOException e) {
+			System.err.println("ERROR: Cannot open output file for writing.");
+		}
+		
 		//loop through each of the algorithms
 		for (Algorithm alg: Algorithm.values()){
 			currentAlg = alg;
@@ -93,11 +102,10 @@ public class Project1 {
 			});
 			
 			//retrieve process information from file
-			if (args.length == 0) {
-				System.out.println("ERROR: No input file.");
+			if (!parseFile(args[0])){
+				System.err.println("ERROR: Could not read given input file.");
 				return;
 			}
-			parseFile(args[0]);
 			
 			currentTime=0;
 			
@@ -143,6 +151,12 @@ public class Project1 {
 				System.out.println();
 			}else
 				System.out.print("time "+currentTime+"ms: Simulator ended for " + currentAlg);
+			
+			try{
+				writeStatistics(args[1]);
+			}catch(IOException e){
+				System.err.println("ERROR: Could not write to output file.");
+			}
 		}
 	}
 	
@@ -197,7 +211,7 @@ public class Project1 {
 	 * Expected file format: <proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
 	 * @param filename the file to parse
 	 */
-	private static void parseFile(String filename){
+	private static boolean parseFile(String filename){
 		try{
 			outside.clear();
 			Scanner input = new Scanner(new File(filename));
@@ -210,9 +224,11 @@ public class Project1 {
 				}
 			}
 			input.close();
+			return true;
 		}catch(IOException e){
 			System.err.println("ERROR: Cannot read file "+filename+" ("+e.getMessage()+")");
-		}
+			return false;			
+		}		
 	}
 	/* Helper function to parseFile(string).
 	 * This will parse the particular line.
@@ -486,26 +502,23 @@ public class Project1 {
 		return false;
 	}
 	
-	private static String generateStatistics(String algo) { //TODO implement this
-		String retVal = "Algorithm "+algo+"\n";
+	private static void writeStatistics(String filename) throws IOException{
+		fileOut.write("Algorithm "+currentAlg+"\n");
 		double avgBurst=0, avgWait=0, avgTurn=0;
 		Iterator<Process> iter = finished.iterator();
 		while (iter.hasNext()) {
-			Process p = iter.next();
-			
+			Process p = iter.next();			
 			avgBurst += p.getCPUBurstTime();
 			avgWait += p.getNextStateChange()-p.getArrivalTime();
 		}
 		
 		avgBurst = avgBurst/finished.size();
 		
-		retVal += "-- average CPU burst time: "+avgBurst+"\n";
-		retVal += "-- average wait time: "+avgWait+"\n";
-		retVal += "-- average turnaround time: "+avgTurn+"\n";
-		retVal += "-- total number of context switches: "+csCount+"\n";
-		retVal += "-- total number of preemptions: "+preemptCount+"\n";
-		
-		return retVal;
+		fileOut.write("-- average CPU burst time: "+avgBurst+"\n");
+		fileOut.write("-- average wait time: "+avgWait+"\n");
+		fileOut.write("-- average turnaround time: "+avgTurn+"\n");
+		fileOut.write("-- total number of context switches: "+csCount+"\n");
+		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
 	}
 	
 	private static String queueStatus() {
