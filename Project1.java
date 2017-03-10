@@ -23,6 +23,7 @@ public class Project1 {
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
 	private static Queue<Process> finished;
+	private static boolean debugging = false;
 	
 	private static int csCount = 0;
 	private static int preemptCount = 0;
@@ -32,7 +33,6 @@ public class Project1 {
 	
 	private static boolean shouldPreempt(){ return false; } //TODO
 	private static void contextSwitch() {} //TODO
-	private static String queueStatus() {return "Queue status";}
 	
 	public static void main(String[] args) {
 		
@@ -62,23 +62,18 @@ public class Project1 {
 		
 		//running loop for the program, loops until all processes have completed
 		int i=0;
-		while(i<20){
-			System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
-			System.out.println("\tCooldown: "+cooldown);
-			System.out.println("\tOutside Size: "+outside.size());
-			System.out.println("\tQueue Size: "+queue.size());
-			System.out.println("\tIO Size: "+io.size());
-			if (currentProcess != null) System.out.println("\tCPU Status: "+currentProcess);
-			else System.out.println("\tCPU Status: Empty");
-			System.out.println("\tFinished Size: "+finished.size());
-			
+		while(true){
+			if (debugging) {
+				System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
+				System.out.println("\tCooldown: "+cooldown);
+				System.out.println("\tOutside Size: "+outside.size());
+				System.out.println("\tQueue Size: "+queue.size());
+				System.out.println("\tIO Size: "+io.size());
+				if (currentProcess != null) System.out.println("\tCPU Status: "+currentProcess);
+				else System.out.println("\tCPU Status: Empty");
+				System.out.println("\tFinished Size: "+finished.size());
+			}
 			//TODO Account for context switch!
-			
-			/* This code is being removed as it is already being done in the 
-			 * updateOutside() function. 
-			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime){
-				queue.add(outside.poll());
-			} */
 			
 			/* Removed the condition "currentProcess == null", because
 			 * sometimes the processor will be empty for a while, while 
@@ -88,7 +83,7 @@ public class Project1 {
 			}
 			
 			int timeDelta = queryNextEvent();
-			System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
+			if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
 			if(timeDelta == Integer.MAX_VALUE) break;
 			updateTimestamps(timeDelta);
 			
@@ -134,7 +129,7 @@ public class Project1 {
 			reason = "process entering";
 		}
 		
-		System.out.println("Next process is occuring because: "+reason);
+		//System.out.println("Next process is occuring because: "+reason);
 		return timeDelta;
 	}
 	
@@ -242,11 +237,9 @@ public class Project1 {
 			// have half a cs switch to get it into the processor.
 			cooldown = contextSwitchTime/2;
 			currentProcess = queue.poll();
+			currentProcess.resetBurstTime();
 			
-			if (currentProcess != null) System.out.println("\tCPU Status: "+currentProcess);
-			else System.out.println("\tCPU Status: Empty");
-			
-			System.out.println("time "+currentTime+"ms: Process "+currentProcess.getID()+" started using the CPU ["+queueStatus()+"]");
+			System.out.println("time "+(currentTime+contextSwitchTime/2)+"ms: Process "+currentProcess.getID()+" started using the CPU ["+queueStatus()+"]");
 		}
 		
 		
@@ -258,7 +251,6 @@ public class Project1 {
 	 */
 	private static void updateIO(){
 		Iterator<Process> iter;
-		boolean debugging = true;
 		
 		if (debugging) {
 			System.out.print(currentTime+": IO List before update: ");
@@ -295,7 +287,6 @@ public class Project1 {
 	 */
 	private static void updateOutside(){
 		Iterator<Process> iter;
-		boolean debugging = true;
 		
 		if (debugging) {
 			System.out.print(currentTime+": Outside List before update: ");
@@ -362,7 +353,18 @@ public class Project1 {
 		return retVal;
 	}
 	
-	
+	private static String queueStatus() {
+		if (queue.size() == 0)
+			return "Q <empty>";
+		
+		String retVal = "Q";
+		Iterator<Process> iter = queue.iterator();
+		while (iter.hasNext()) {
+			Process p = iter.next();
+			retVal += " "+p.getID();
+		}
+		return retVal;
+	}
 	
 	
 };
