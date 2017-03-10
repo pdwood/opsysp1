@@ -122,11 +122,19 @@ public class Project1 {
 		else if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
 			timeDelta = currentProcess.getRemainingCPUTime();
 			reason = "current process finished";
+<<<<<<< HEAD
 		}
 		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
 			timeDelta = io.peek().getNextStateChange()-currentTime;
 			reason = "process exiting IO";
 		}
+=======
+		}
+		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
+			timeDelta = io.peek().getNextStateChange()-currentTime;
+			reason = "process exiting IO";
+		}
+>>>>>>> c79fe6c219e4187d80cba19da203618b9420b15f
 		/* If the processor is empty and there are more processes and there is no cooldown,
 		 * next event is now, it is putting process in currentProcess. */
 		if(currentProcess == null && queue.size() > 0 && cooldown == 0){
