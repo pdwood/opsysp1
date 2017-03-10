@@ -34,66 +34,88 @@ public class Project1 {
 	private enum State{
 		WAITING, EMPTYING, INITIALIZING;
 	}
-	
-	//TODO create an enum for algorithm types and loop the main through them
-
 	private static State preemptState = State.WAITING;
 	
-	public static void main(String[] args) {
+	//Enum for the different algorithms
+	private enum Algorithm{
+		FCFS ("FCFS"), 
+		SRT ("SRT"),
+		RR ("RR");
 		
-		//initialize local variables
-		finished = new LinkedList<Process>();
-		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided based on the algorithm
-		io = new PriorityQueue<Process>(new Comparator<Process>(){
-			public int compare(Process a, Process b){
-				return a.getNextStateChange() - b.getNextStateChange();
-			}
-		});
-		//Outside should be queue sorted by arrival time
-		outside = new PriorityQueue<Process>(new Comparator<Process>(){
-			public int compare(Process a, Process b){
-				return a.getArrivalTime() - b.getArrivalTime();
-			}
-		});
-		
-		//retrieve process information from file
-		if (args.length == 0) {
-			System.out.println("ERROR: No input file.");
-			return;
+		private final String name;
+		private Algorithm(String s) {
+	        name = s;
+	    }
+		public String toString() {
+		       return this.name;
 		}
-		parseFile(args[0]);
-		
-		currentTime=0;
-		
-		int i=0;//used for debug
-		
-		//running loop for the program, loops until all processes have completed
-		while(true){
-			if (debugging) {
-				System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
-				System.out.println("\tCooldown: "+cooldown);
-				System.out.println("\tOutside Size: "+outside.size());
-				System.out.println("\tQueue Size: "+queue.size());
-				System.out.println("\tIO Size: "+io.size());
-				if (currentProcess != null) System.out.println("\tCPU Status: "+currentProcess);
-				else System.out.println("\tCPU Status: Empty");
-				System.out.println("\tFinished Size: "+finished.size());
+	}
+	
+	
+	
+	public static void main(String[] args) {
+		//loop through each of the algorithms
+		for (Algorithm alg: Algorithm.values()){
+			//initialize local variables
+			finished = new LinkedList<Process>();
+			queue = new LinkedList<Process>(); //TODO this type should be dynamically decided based on the algorithm
+			io = new PriorityQueue<Process>(new Comparator<Process>(){
+				public int compare(Process a, Process b){
+					return a.getNextStateChange() - b.getNextStateChange();
+				}
+			});
+			//Outside should be queue sorted by arrival time
+			outside = new PriorityQueue<Process>(new Comparator<Process>(){
+				public int compare(Process a, Process b){
+					return a.getArrivalTime() - b.getArrivalTime();
+				}
+			});
+			
+			//retrieve process information from file
+			if (args.length == 0) {
+				System.out.println("ERROR: No input file.");
+				return;
 			}
+			parseFile(args[0]);
 			
-			int timeDelta = queryNextEvent();
-			if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
-			if(timeDelta == Integer.MAX_VALUE) break;
-			updateTimestamps(timeDelta);
+			currentTime=0;
 			
-			/* Go through all the sectors and update/check their statuses. 
-			 * Yes, order does matter, see Piazza "Several Questions". */
-			updateCPU(timeDelta);
-			updateIO();
-			updateOutside();
-			updateQueue();
-			checkPreemption();
+			int i=0;//used for debug
 			
-			i++;//used for debug
+			//running loop for the program, loops until all processes have completed
+			
+			System.out.print("time "+currentTime+"ms: Simulator started for " + alg);
+			System.out.println(" ["+queueStatus()+"]");
+			
+			while(true){
+				if (debugging) {
+					System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
+					System.out.println("\tCooldown: "+cooldown);
+					System.out.println("\tOutside Size: "+outside.size());
+					System.out.println("\tQueue Size: "+queue.size());
+					System.out.println("\tIO Size: "+io.size());
+					if (currentProcess != null) System.out.println("\tCPU Status: "+currentProcess);
+					else System.out.println("\tCPU Status: Empty");
+					System.out.println("\tFinished Size: "+finished.size());
+				}
+				
+				int timeDelta = queryNextEvent();
+				if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
+				if(timeDelta == Integer.MAX_VALUE) break;
+				updateTimestamps(timeDelta);
+				
+				/* Go through all the sectors and update/check their statuses. 
+				 * Yes, order does matter, see Piazza "Several Questions". */
+				updateCPU(timeDelta);
+				updateIO();
+				updateOutside();
+				updateQueue();
+				checkPreemption(alg, false);
+				
+				i++;//used for debug
+			}
+			System.out.println("time "+currentTime+"ms: Simulator ended for " + alg);
+			System.out.println();
 		}
 	}
 	
@@ -150,6 +172,7 @@ public class Project1 {
 	 */
 	private static void parseFile(String filename){
 		try{
+			outside.clear();
 			Scanner input = new Scanner(new File(filename));
 			while(input.hasNextLine()){
 				String line = input.nextLine();
@@ -393,10 +416,29 @@ public class Project1 {
 	/**
 	 * Checks for a preemption using the current algorithm
 	 * Initiates a context switch if a preemption is necessary
+	 * @param alg the algorithm to preempt with
+	 * @param force will force a context switch if true
 	 * @return true if there was a preemption, false otherwise
 	 */
-	private static boolean checkPreemption(){
+	private static boolean checkPreemption(Algorithm alg, boolean force){
+		//force a preemption if force is true
+		if (force){
+			boolean temp = emptyCPU();
+			if (temp)
+				preemptCount++;
+			return temp;
+		}
+			
 		//TODO call emptyCPU() if a preemption is necessary
+		switch(alg){
+		case FCFS:
+			return false; //FCFS dosen't preempt
+		case SRT:
+			break;
+		case RR:
+			break;
+			
+		}
 		return false;
 	}
 	
