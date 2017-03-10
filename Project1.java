@@ -23,12 +23,11 @@ public class Project1 {
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
 	private static Queue<Process> finished;
-	private static boolean debugging = true;
+	private static boolean debugging = false;
 	
 	private static int csCount = 0;
 	private static int preemptCount = 0;
 	private static int contextSwitchTime = 6;
-	private static int timeToNextEvent; 
 	private static int currentTime;
 	
 	//Enum for CPU state
@@ -47,7 +46,7 @@ public class Project1 {
 		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided based on the algorithm
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
-				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
+				return a.getNextStateChange() - b.getNextStateChange();
 			}
 		});
 		//Outside should be queue sorted by arrival time
@@ -140,10 +139,6 @@ public class Project1 {
 	 * it's own. We will discuss this tonight. 
 	 */
 	private static void updateTimestamps(int timeDelta){
-		/* These line is getting removed, as it belongs to the CPU 
-		 * specifically, not the timestamps in general. 
-		 * if(currentProcess != null) currentProcess.decrementTime(timeDelta);
-		 * if(cooldown >= timeDelta) cooldown -= timeDelta; */
 		currentTime += timeDelta;
 	}
 	
@@ -159,7 +154,7 @@ public class Project1 {
 			while(input.hasNextLine()){
 				String line = input.nextLine();
 				Process p;
-				if(line.charAt(0)!='#'){
+				if(line.length() > 0 && line.charAt(0)!='#'){
 					p = parse(line);
 					outside.add(p);
 				}
@@ -236,15 +231,16 @@ public class Project1 {
 				if (currentProcess.getRemainingCPUTime() > 0) {
 					queue.add(currentProcess);
 				}
-				/* Else, If the process has bursts remaining, move it to the I/O. */
+				/* Else, If the process has bursts remaining, move it to the I/O and reset the Burst time. */
 				else if (currentProcess.getRemainingCPUBursts() > 0) {
 					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
+					currentProcess.resetBurstTime();
 					io.add(currentProcess);
 				}
 				/* Else, If it has finished all bursts, set nextStateChange variable
 				 * appropriately, and move it to the finished queue. */
 				else if (currentProcess.getRemainingCPUBursts() == 0) {
-					currentProcess.setStateChangeTime(currentTime+contextSwitchTime/2);
+					currentProcess.setStateChangeTime(currentTime);
 					finished.add(currentProcess);
 				}
 				//Error checking...
@@ -320,7 +316,7 @@ public class Project1 {
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
-				System.out.print(p.getNextStateChange()+", ");
+				System.out.print(p.getID()+":"+p.getNextStateChange()+", ");
 			}
 			System.out.println("");
 		}
@@ -337,7 +333,7 @@ public class Project1 {
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
-				System.out.print(p.getNextStateChange()+", ");
+				System.out.print(p.getID()+":"+p.getNextStateChange()+", ");
 			}
 			System.out.println("");
 		}
@@ -404,7 +400,7 @@ public class Project1 {
 		return false;
 	}
 	
-	private static String generateStatistics(String algo) {
+	private static String generateStatistics(String algo) { //TODO implement this
 		String retVal = "Algorithm "+algo+"\n";
 		double avgBurst=0, avgWait=0, avgTurn=0;
 		Iterator<Process> iter = finished.iterator();
