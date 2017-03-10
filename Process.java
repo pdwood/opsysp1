@@ -35,7 +35,8 @@ public class Process{
 	public int getNumberOfBursts() {return numBursts;}
 	public int getIOTime() {return ioTime;}
 	
-	public void decrementTime(int time){ timeRemaining-=time; }
+	public void resetBurstTime() {timeRemaining = cpuBurstTime;}
+	public void decrementTime(int time){ timeRemaining-=time;}
 	public void decrementBursts() {remainingCPUBursts--;}
 	public void setStateChangeTime(int t) {stateChangeTime = t;}
 	
