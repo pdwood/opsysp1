@@ -23,27 +23,28 @@ public class Project1 {
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
 	private static Queue<Process> finished;
-	private static boolean debugging = false;
+	private static boolean debugging = true;
 	
 	private static int csCount = 0;
 	private static int preemptCount = 0;
 	private static int contextSwitchTime = 6;
-	private static int timeToNextEvent;
+	private static int timeToNextEvent; 
 	private static int currentTime;
 	
-	private enum GavinWantsAnEnum{
-		FIRST_VALUE, SECOND_VALUE, THIRD_VALUE;
-	
+	//Enum for CPU state
+	private enum State{
+		WAITING, EMPTYING, INITIALIZING;
 	}
+	
+	//TODO create an enum for algorithm types and loop the main through them
 
-	private static boolean shouldPreempt(){ return false; } //TODO
-	private static void contextSwitch() {} //TODO
+	private static State preemptState = State.WAITING;
 	
 	public static void main(String[] args) {
 		
 		//initialize local variables
 		finished = new LinkedList<Process>();
-		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided
+		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided based on the algorithm
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
 				return a.getRemainingCPUTime() - b.getRemainingCPUTime();
@@ -65,8 +66,9 @@ public class Project1 {
 		
 		currentTime=0;
 		
+		int i=0;//used for debug
+		
 		//running loop for the program, loops until all processes have completed
-		int i=0;
 		while(true){
 			if (debugging) {
 				System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
@@ -89,7 +91,10 @@ public class Project1 {
 			updateCPU(timeDelta);
 			updateIO();
 			updateOutside();
-			i++;
+			updateQueue();
+			checkPreemption();
+			
+			i++;//used for debug
 		}
 	}
 	
@@ -102,7 +107,7 @@ public class Project1 {
 		String reason="none";
 		
 		//Possible next events: Outside arrival, process finishing CPU, process
-		//finishing IO, others? ... SRT preemption, but that is weird.
+		//finishing I/O, others? ... SRT preemption, but that is weird.
 		if(outside.size() > 0) {
 			timeDelta = outside.peek().getArrivalTime() - currentTime;
 			reason = "outside entering ("+outside.peek().getArrivalTime()+"-"+currentTime+"="+timeDelta+").";
@@ -117,7 +122,7 @@ public class Project1 {
 		}
 		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
 			timeDelta = io.peek().getNextStateChange()-currentTime;
-			reason = "process exiting IO";
+			reason = "process exiting I/O";
 		}
 		/* If the processor is empty and there are more processes and there is no cooldown,
 		 * next event is now, it is putting process in currentProcess. */
@@ -170,7 +175,8 @@ public class Project1 {
 	private static Process parse(String in){
 		String[] tokens = in.split("\\|");
 		
-		if(tokens.length != 5) throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
+		if(tokens.length != 5) 
+			throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
 	/**
@@ -187,71 +193,130 @@ public class Project1 {
 	 * @param elapsedTime the amount of time since the last cpu update
 	 */
 	private static void updateCPU(int elapsedTime){
-		
-		
-		// If there is something in the processor and it isn't working on a CS.
-		if (currentProcess != null && cooldown == 0) {
-			currentProcess.decrementTime(elapsedTime);
-			
-			// If the current process is done with its current CPU Burst...
-			if (currentProcess.getRemainingCPUTime() <= 0) {
-				//decrement the number of remaining bursts
-				currentProcess.decrementBursts();
-				
-				/* If it has bursts remaining, move it to the IO. */
-				if (currentProcess.getRemainingCPUBursts() > 0) {
-					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
-					io.add(currentProcess);
-					System.out.print("time "+currentTime+"ms: Process "+currentProcess.getID()+" completed a CPU burst; ");
-					System.out.println(currentProcess.getRemainingCPUBursts()+" bursts to go ["+queueStatus()+"]");
-				}
-				
-				/* If it has finished all bursts, set nextStateChange variable
-				 * appropriately, and move it to the finished queue. */
-				if (currentProcess.getRemainingCPUBursts() == 0) {
-					System.out.println("time "+currentTime+"ms: Process "+currentProcess.getID()+" terminated ["+queueStatus()+"]");
-					currentProcess.setStateChangeTime(currentTime+contextSwitchTime/2);
-					finished.add(currentProcess);
-				}
-				
-				/* Set the processor to null, and the cooldown to cs/2 + elapsedTime 
-				 * The +elapsedTime is sort of a hack around the fact that 
-				 * the next if statement decrements it, but it has to be in 
-				 * this order. */
-				currentProcess = null;
-				cooldown = (contextSwitchTime/2)+elapsedTime;
-			}
-		}
-		
 		// If the processor is warming up/cooling down from a context switch.
 		if (cooldown > 0) {
 			cooldown = cooldown - elapsedTime;
 		}
-		
-		/* If there is nothing in the processor, and the processor is done
-		 * cooling down, and there is something waiting in the queue. */
-		if (currentProcess == null && cooldown == 0 && queue.size()!=0) {
-			// If there is something in the queue, pop it in the processor, and
-			// have half a cs switch to get it into the processor.
-			cooldown = contextSwitchTime/2;
-			currentProcess = queue.poll();
-			currentProcess.resetBurstTime();
-			
-			System.out.println("time "+(currentTime+contextSwitchTime/2)+"ms: Process "+currentProcess.getID()+" started using the CPU ["+queueStatus()+"]");
+		if (cooldown < 0){
+			throw new RuntimeException("ERROR:The cooldown is negative, this should not happen.");
 		}
-		
-		
+		//If there is something in the processor and the processor is not on cooldown
+		if (currentProcess != null && cooldown == 0){
+			
+			// If the processor isn't working on a CS.
+			if (preemptState == State.WAITING) {
+				//decrement the remaining process time by the elapsed time
+				currentProcess.decrementTime(elapsedTime);
+				
+				// If the current process is done with its current CPU Burst...
+				if (currentProcess.getRemainingCPUTime() <= 0) {
+					//decrement the number of remaining bursts
+					currentProcess.decrementBursts();
+					//Print remaining bursts to output if any left
+					if (currentProcess.getRemainingCPUBursts() > 0){
+						System.out.print("time "+currentTime+"ms: Process "+currentProcess.getID()
+							+" completed a CPU burst; ");
+						if (currentProcess.getRemainingCPUBursts() == 1)
+							System.out.println(currentProcess.getRemainingCPUBursts()
+									+" burst to go ["+queueStatus()+"]");
+						else
+							System.out.println(currentProcess.getRemainingCPUBursts()
+									+" bursts to go ["+queueStatus()+"]");
+					}
+					
+					//Start a context switch to empty the CPU
+					emptyCPU();	
+				}
+			}
+			//If the CPU is context switching the current process out (and the cooldown is 0)
+			else if (preemptState == State.EMPTYING) {
+				
+				/* If the process is not finished with the current burst, return it to the queue.
+				 * This should only be caused by a preemption. */
+				if (currentProcess.getRemainingCPUTime() > 0) {
+					queue.add(currentProcess);
+				}
+				/* Else, If the process has bursts remaining, move it to the I/O. */
+				else if (currentProcess.getRemainingCPUBursts() > 0) {
+					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
+					io.add(currentProcess);
+				}
+				/* Else, If it has finished all bursts, set nextStateChange variable
+				 * appropriately, and move it to the finished queue. */
+				else if (currentProcess.getRemainingCPUBursts() == 0) {
+					currentProcess.setStateChangeTime(currentTime+contextSwitchTime/2);
+					finished.add(currentProcess);
+				}
+				//Error checking...
+				else if (currentProcess.getRemainingCPUBursts() < 0){
+					throw new RuntimeException("ERROR:The process has less than zero bursts remaining,"
+							+ " this should not happen.");
+				}
+				//clear the CPU pointer and set the CPU to a waiting state
+				preemptState = State.WAITING;
+				currentProcess = null;
+			}
+			//If the CPU is currently context switching a new process in (and the cooldown is 0).
+			else if (preemptState == State.INITIALIZING) {
+				//Set the CPU to a WAITING state
+				preemptState = State.WAITING;
+				System.out.println("time "+ currentTime +"ms: Process "
+					+currentProcess.getID()+" started using the CPU ["+queueStatus()+"]");
+			}
+		}	
 	}
 	
 	/**
-	 * Check all processes to see if they are done doing IO. 
-	 * --If any processes are finished with IO, move them to the queue
+	 * If there is something in the CPU, and the CPU is not busy, 
+	 * 	initiate a context switch to empty the CPU.
+	 */
+	private static boolean emptyCPU() {
+		if (currentProcess != null && preemptState == State.WAITING){
+			//Start a context switch (first half):
+			//set the cooldown
+			cooldown = (contextSwitchTime/2);
+			//change the preemptionState to EMPTYING
+			preemptState = State.EMPTYING;
+			if (currentProcess.getRemainingCPUBursts() > 0){
+				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
+					+ " switching out of CPU; will block on I/O until time "
+					+ (currentTime + (contextSwitchTime/2) + currentProcess.getIOTime())
+					+ "ms ["+queueStatus()+"]");
+			}else{
+				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
+					+ " terminated ["+queueStatus()+"]");
+			}	
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * If the cpu is empty, move the current process to the cpu and
+	 * 	initiate a context switch.
+	 */
+	private static boolean fillCPU(Process p) { 
+		if (currentProcess == null && preemptState == State.WAITING){
+			//Start a context switch (second half):
+			//put the passed process in the CPU
+			currentProcess = p;
+			//set the cooldown
+			cooldown = (contextSwitchTime/2);
+			//change the preemptionState to INITIALIZING
+			preemptState = State.INITIALIZING;
+			return true;
+		}
+		return false;
+	} 
+	
+	/**
+	 * Move all processes that have completed I/O to the queue 
 	 */
 	private static void updateIO(){
 		Iterator<Process> iter;
 		
 		if (debugging) {
-			System.out.print(currentTime+": IO List before update: ");
+			System.out.print(currentTime+": I/O List before update: ");
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
@@ -268,7 +333,7 @@ public class Project1 {
 		}
 		
 		if (debugging) {
-			System.out.print(currentTime+": IO List after update: ");
+			System.out.print(currentTime+": I/O List after update: ");
 			iter = io.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
@@ -276,7 +341,6 @@ public class Project1 {
 			}
 			System.out.println("");
 		}
-		
 	}
 	
 	/**
@@ -319,19 +383,25 @@ public class Project1 {
 	}
 	
 	/**
-	 * Check if cpu is empty
-	 * Check for preemption
-	 * -- If there was a preemption, increment the preemption counter.
-	 * Initiate context switch if necessary
-	 * -- If there was a context switch, increment the context switch counter.
+	 * If the CPU is empty push the next queued object into the CPU
 	 */
 	private static void updateQueue(){
-		//check if cpu is empty
-		//check for preemption
-		//if (cpu == null)
-		//check for preemption
-		
-		//initiate context switch (if cpu empty)
+		//if the queue is empty, return
+		if (queue.isEmpty())
+			return;
+		//If the CPU is empty, push the first process in the queue into the CPU
+		if (currentProcess == null && preemptState == State.WAITING)
+			fillCPU(queue.poll());	
+	}
+	
+	/**
+	 * Checks for a preemption using the current algorithm
+	 * Initiates a context switch if a preemption is necessary
+	 * @return true if there was a preemption, false otherwise
+	 */
+	private static boolean checkPreemption(){
+		//TODO call emptyCPU() if a preemption is necessary
+		return false;
 	}
 	
 	private static String generateStatistics(String algo) {
