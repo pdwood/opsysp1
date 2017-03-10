@@ -144,8 +144,11 @@ public class Project1 {
 				
 				i++;//used for debug
 			}
-			System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
-			System.out.println();
+			if (currentAlg != Algorithm.RR){
+				System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
+				System.out.println();
+			}else
+				System.out.print("time "+currentTime+"ms: Simulator ended for " + currentAlg);
 			
 			try{
 				writeStatistics(args[1]);
@@ -393,11 +396,16 @@ public class Project1 {
 			queue.add(p);
 			//TODO change this message if p would preempt
 			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
-			if (checkPreemption(currentAlg))
+			if (checkPreemption(currentAlg)){
 				System.out.print(" and will preempt " + currentProcess.getID());
+				Process temp = queue.poll();
+				System.out.println(" ["+queueStatus()+"]");
+				queue.add(temp);
+			}
+				
 			else
-				System.out.print("; added to ready queue");
-			System.out.println(" ["+queueStatus()+"]");
+				System.out.println("; added to ready queue ["+queueStatus()+"]");
+			
 			
 		}
 		
@@ -434,7 +442,15 @@ public class Project1 {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
 				queue.add(p);
-				System.out.println("time "+currentTime+"ms: Process "+p.getID()+" arrived and added to ready queue ["+queueStatus()+"]");
+				System.out.print("time "+currentTime+"ms: Process "+p.getID()+" arrived");
+				if (checkPreemption(currentAlg)){
+					System.out.print(" and will preempt " + currentProcess.getID());
+					Process temp = queue.poll();
+					System.out.println(" ["+queueStatus()+"]");
+					queue.add(temp);
+				}	
+				else
+					System.out.println(" and added to ready queue ["+queueStatus()+"]");
 				iter.remove();
 			}
 		}
