@@ -150,31 +150,31 @@ public class Project1 {
 	private static int queryNextEvent(){
 		//(May be difficult for SRT...)
 		int timeDelta=Integer.MAX_VALUE;
-		String reason="none";
+		//String reason="none";
 		
 		//Possible next events: Outside arrival, process finishing CPU, process
 		//finishing I/O, others? ... SRT preemption, but that is weird.
 		if(outside.size() > 0) {
 			timeDelta = outside.peek().getArrivalTime() - currentTime;
-			reason = "outside entering ("+outside.peek().getArrivalTime()+"-"+currentTime+"="+timeDelta+").";
+			//reason = "outside entering ("+outside.peek().getArrivalTime()+"-"+currentTime+"="+timeDelta+").";
 		}
 		if(cooldown > 0 && cooldown < timeDelta) {
 			timeDelta = cooldown;
-			reason = "cooldown finished";
+			//reason = "cooldown finished";
 		}
 		else if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
 			timeDelta = currentProcess.getRemainingCPUTime();
-			reason = "current process finished";
+			//reason = "current process finished";
 		}
 		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
 			timeDelta = io.peek().getNextStateChange()-currentTime;
-			reason = "process exiting I/O";
+			//reason = "process exiting I/O";
 		}
 		/* If the processor is empty and there are more processes and there is no cooldown,
 		 * next event is now, it is putting process in currentProcess. */
 		if(currentProcess == null && queue.size() > 0 && cooldown == 0){
 			timeDelta = 0;
-			reason = "process entering";
+			//reason = "process entering";
 		}
 		
 		//System.out.println("Next process is occuring because: "+reason);
