@@ -86,6 +86,8 @@ public class Project1 {
 			//Outside should be queue sorted by arrival time
 			outside = new PriorityQueue<Process>(new Comparator<Process>(){
 				public int compare(Process a, Process b){
+					if (a.getArrivalTime() == b.getArrivalTime())
+						return a.getID().compareTo(b.getID());
 					return a.getArrivalTime() - b.getArrivalTime();
 				}
 			});
