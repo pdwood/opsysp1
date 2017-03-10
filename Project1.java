@@ -31,6 +31,11 @@ public class Project1 {
 	private static int timeToNextEvent;
 	private static int currentTime;
 	
+	private enum GavinWantsAnEnum{
+		FIRST_VALUE, SECOND_VALUE, THIRD_VALUE;
+	
+	}
+
 	private static boolean shouldPreempt(){ return false; } //TODO
 	private static void contextSwitch() {} //TODO
 	
