@@ -36,6 +36,7 @@ public class Project1 {
 	}
 	private static State preemptState = State.WAITING;
 	
+	
 	//Enum for the different algorithms
 	private enum Algorithm{
 		FCFS ("FCFS"), 
@@ -50,15 +51,33 @@ public class Project1 {
 		       return this.name;
 		}
 	}
-	
+	private static Algorithm currentAlg;
 	
 	
 	public static void main(String[] args) {
 		//loop through each of the algorithms
 		for (Algorithm alg: Algorithm.values()){
+			currentAlg = alg;
 			//initialize local variables
 			finished = new LinkedList<Process>();
-			queue = new LinkedList<Process>(); //TODO this type should be dynamically decided based on the algorithm
+			
+			//select the queue type based on the current algorithm
+			switch(currentAlg){
+			case FCFS:
+				queue = new LinkedList<Process>();
+				break;
+			case SRT:
+				queue = new PriorityQueue<Process>(new Comparator<Process>(){
+					public int compare(Process a, Process b){
+						return a.getRemainingCPUTime() - b.getRemainingCPUTime();
+					}
+				});
+				break;
+			case RR:
+				queue = new LinkedList<Process>();
+				break;
+			}
+			
 			io = new PriorityQueue<Process>(new Comparator<Process>(){
 				public int compare(Process a, Process b){
 					return a.getNextStateChange() - b.getNextStateChange();
@@ -84,7 +103,7 @@ public class Project1 {
 			
 			//running loop for the program, loops until all processes have completed
 			
-			System.out.print("time "+currentTime+"ms: Simulator started for " + alg);
+			System.out.print("time "+currentTime+"ms: Simulator started for " + currentAlg);
 			System.out.println(" ["+queueStatus()+"]");
 			
 			while(true){
@@ -110,11 +129,14 @@ public class Project1 {
 				updateIO();
 				updateOutside();
 				updateQueue();
-				checkPreemption(alg, false);
+				if (checkPreemption(currentAlg)){
+					if (emptyCPU())
+						preemptCount++;
+				}
 				
 				i++;//used for debug
 			}
-			System.out.println("time "+currentTime+"ms: Simulator ended for " + alg);
+			System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
 			System.out.println();
 		}
 	}
@@ -279,8 +301,12 @@ public class Project1 {
 			else if (preemptState == State.INITIALIZING) {
 				//Set the CPU to a WAITING state
 				preemptState = State.WAITING;
-				System.out.println("time "+ currentTime +"ms: Process "
-					+currentProcess.getID()+" started using the CPU ["+queueStatus()+"]");
+				System.out.print("time "+ currentTime +"ms: Process "
+					+currentProcess.getID()+" started using the CPU");
+				if (currentProcess.getRemainingCPUTime() < currentProcess.getCPUBurstTime())
+					System.out.print(" with "+ currentProcess.getRemainingCPUTime() 
+						+"ms remaining");
+				System.out.println(" ["+queueStatus()+"]");
 			}
 		}	
 	}
@@ -292,11 +318,9 @@ public class Project1 {
 	private static boolean emptyCPU() {
 		if (currentProcess != null && preemptState == State.WAITING){
 			//Start a context switch (first half):
-			//set the cooldown
-			cooldown = (contextSwitchTime/2);
-			//change the preemptionState to EMPTYING
-			preemptState = State.EMPTYING;
-			if (currentProcess.getRemainingCPUBursts() > 0){
+			if (checkPreemption(currentAlg))
+				; //if the process has been preempted, dont print
+			else if (currentProcess.getRemainingCPUBursts() > 0){
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
 					+ " switching out of CPU; will block on I/O until time "
 					+ (currentTime + (contextSwitchTime/2) + currentProcess.getIOTime())
@@ -304,7 +328,11 @@ public class Project1 {
 			}else{
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
 					+ " terminated ["+queueStatus()+"]");
-			}	
+			}
+			//set the cooldown
+			cooldown = (contextSwitchTime/2);
+			//change the preemptionState to EMPTYING
+			preemptState = State.EMPTYING;
 			return true;
 		}
 		return false;
@@ -347,7 +375,13 @@ public class Project1 {
 		while (io.size() > 0 && io.peek().getNextStateChange() <= currentTime) {
 			Process p = io.poll();
 			queue.add(p);
-			System.out.println("time "+currentTime+"ms: Process "+p.getID()+" completed I/O; added to ready queue ["+queueStatus()+"]");
+			//TODO change this message if p would preempt
+			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
+			if (checkPreemption(currentAlg))
+				System.out.print(" and will preempt " + currentProcess.getID());
+			else
+				System.out.print("; added to ready queue");
+			System.out.println(" ["+queueStatus()+"]");
 			
 		}
 		
@@ -415,29 +449,21 @@ public class Project1 {
 	
 	/**
 	 * Checks for a preemption using the current algorithm
-	 * Initiates a context switch if a preemption is necessary
-	 * @param alg the algorithm to preempt with
-	 * @param force will force a context switch if true
+	 * @param alg the algorithm to check with
 	 * @return true if there was a preemption, false otherwise
 	 */
-	private static boolean checkPreemption(Algorithm alg, boolean force){
-		//force a preemption if force is true
-		if (force){
-			boolean temp = emptyCPU();
-			if (temp)
-				preemptCount++;
-			return temp;
-		}
-			
-		//TODO call emptyCPU() if a preemption is necessary
+	private static boolean checkPreemption(Algorithm alg){
+		//Can't preempt an empty CPU or an empty queue
+		if (currentProcess == null || queue.isEmpty())
+			return false;	
 		switch(alg){
 		case FCFS:
 			return false; //FCFS dosen't preempt
 		case SRT:
-			break;
-		case RR:
-			break;
-			
+			if (queue.peek().getRemainingCPUTime() < currentProcess.getRemainingCPUTime())
+				return true;
+		case RR: //TODO set up preemption for RR
+			break; 
 		}
 		return false;
 	}
