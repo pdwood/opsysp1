@@ -10,6 +10,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.CookiePolicy;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -78,6 +79,8 @@ public class Project1 {
 			case SRT:
 				queue = new PriorityQueue<Process>(new Comparator<Process>(){
 					public int compare(Process a, Process b){
+						if (a.getRemainingCPUTime() == b.getRemainingCPUTime())
+							return a.getID().compareTo(b.getID());
 						return a.getRemainingCPUTime() - b.getRemainingCPUTime();
 					}
 				});
@@ -478,7 +481,7 @@ public class Project1 {
 			return;
 		//If the CPU is empty, push the first process in the queue into the CPU
 		if (currentProcess == null && preemptState == State.WAITING)
-			fillCPU(queue.poll());	
+			fillCPU(queue.poll());
 	}
 	
 	/**
@@ -526,9 +529,13 @@ public class Project1 {
 			return "Q <empty>";
 		
 		String retVal = "Q";
-		Iterator<Process> iter = queue.iterator();
-		while (iter.hasNext()) {
-			Process p = iter.next();
+		Queue<Process> copyQueue;
+		if (currentAlg == Algorithm.SRT)
+			copyQueue = new PriorityQueue<Process>(queue);
+		else
+			copyQueue = new LinkedList<Process>(queue);
+		while (!copyQueue.isEmpty()){
+			Process p = copyQueue.poll();
 			retVal += " "+p.getID();
 		}
 		return retVal;
