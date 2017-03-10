@@ -146,11 +146,11 @@ public class Project1 {
 				
 				i++;//used for debug
 			}
+			
+			System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
 			if (currentAlg != Algorithm.RR){
-				System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
 				System.out.println();
-			}else
-				System.out.print("time "+currentTime+"ms: Simulator ended for " + currentAlg);
+			}
 			
 			try{
 				writeStatistics(args[1]);
@@ -519,6 +519,7 @@ public class Project1 {
 		fileOut.write("-- average turnaround time: "+avgTurn+"\n");
 		fileOut.write("-- total number of context switches: "+csCount+"\n");
 		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
+		fileOut.flush();
 	}
 	
 	private static String queueStatus() {
