@@ -426,7 +426,15 @@ public class Project1 {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
 				queue.add(p);
-				System.out.println("time "+currentTime+"ms: Process "+p.getID()+" arrived and added to ready queue ["+queueStatus()+"]");
+				System.out.print("time "+currentTime+"ms: Process "+p.getID()+" arrived");
+				if (checkPreemption(currentAlg)){
+					System.out.print(" and will preempt " + currentProcess.getID());
+					Process temp = queue.poll();
+					System.out.println(" ["+queueStatus()+"]");
+					queue.add(temp);
+				}	
+				else
+					System.out.println(" and added to ready queue ["+queueStatus()+"]");
 				iter.remove();
 			}
 		}
