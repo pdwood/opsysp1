@@ -12,6 +12,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.CookiePolicy;
 import java.util.Comparator;
+import java.util.Formatter;
+import java.text.NumberFormat;
+import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
@@ -39,7 +42,7 @@ public class Project1 {
 	private enum State{
 		WAITING, EMPTYING, INITIALIZING;
 	}
-	private static State preemptState = State.WAITING;	
+	private static State preemptState = State.WAITING;
 	
 	//Enum for the different algorithms
 	private enum Algorithm{
@@ -141,7 +144,7 @@ public class Project1 {
 				updateCPU(timeDelta);
 				updateIO();
 				updateOutside();
-				updateQueue();
+				updateQueue(timeDelta);
 				if (checkPreemption(currentAlg)){
 					if (emptyCPU())
 						preemptCount++;
@@ -271,6 +274,7 @@ public class Project1 {
 			if (preemptState == State.WAITING) {
 				//decrement the remaining process time by the elapsed time
 				currentProcess.decrementTime(elapsedTime);
+				currentProcess.addToTurnTime(elapsedTime);
 				
 				// If the current process is done with its current CPU Burst...
 				if (currentProcess.getRemainingCPUTime() <= 0) {
@@ -289,11 +293,12 @@ public class Project1 {
 					}
 					
 					//Start a context switch to empty the CPU
-					emptyCPU();	
+					emptyCPU();
 				}
 			}
 			//If the CPU is context switching the current process out (and the cooldown is 0)
 			else if (preemptState == State.EMPTYING) {
+				currentProcess.iterateWaitCounter();
 				
 				/* If the process is not finished with the current burst, return it to the queue.
 				 * This should only be caused by a preemption. */
@@ -398,6 +403,8 @@ public class Project1 {
 		
 		while (io.size() > 0 && io.peek().getNextStateChange() <= currentTime) {
 			Process p = io.poll();
+			p.iterateWaitCounter();
+			p.iterateTurnCounter();
 			queue.add(p);
 			//TODO change this message if p would preempt
 			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
@@ -446,6 +453,8 @@ public class Project1 {
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
+				p.iterateWaitCounter();
+				p.iterateTurnCounter();
 				queue.add(p);
 				System.out.print("time "+currentTime+"ms: Process "+p.getID()+" arrived");
 				if (checkPreemption(currentAlg)){
@@ -475,7 +484,14 @@ public class Project1 {
 	/**
 	 * If the CPU is empty push the next queued object into the CPU
 	 */
-	private static void updateQueue(){
+	private static void updateQueue(int elapsedTime){
+		Iterator<Process> iter = queue.iterator();
+		while (iter.hasNext()) {
+			Process p = iter.next();
+			p.addToWaitTime(elapsedTime);
+			p.addToTurnTime(elapsedTime);
+		}
+		
 		//if the queue is empty, return
 		if (queue.isEmpty())
 			return;
@@ -492,7 +508,7 @@ public class Project1 {
 	private static boolean checkPreemption(Algorithm alg){
 		//Can't preempt an empty CPU or an empty queue
 		if (currentProcess == null || queue.isEmpty())
-			return false;	
+			return false;
 		switch(alg){
 		case FCFS:
 			return false; //FCFS dosen't preempt
@@ -506,20 +522,31 @@ public class Project1 {
 	}
 	
 	private static void writeStatistics(String filename) throws IOException{
+		NumberFormat formatter = new DecimalFormat("#0.00");
+		
 		fileOut.write("Algorithm "+currentAlg+"\n");
 		double avgBurst=0, avgWait=0, avgTurn=0;
+		int totalBursts=0, totalWaits=0, totalTurns=0;
 		Iterator<Process> iter = finished.iterator();
 		while (iter.hasNext()) {
-			Process p = iter.next();			
-			avgBurst += p.getCPUBurstTime();
-			avgWait += p.getNextStateChange()-p.getArrivalTime();
+			Process p = iter.next();
+			totalBursts += p.getNumberOfBursts();
+			totalWaits += p.getWaitCount();
+			totalTurns += p.getTurnCount();
+			
+			
+			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
+			avgTurn += p.getTurnTimer();
+			avgWait += p.getWaitTimer();
 		}
 		
-		avgBurst = avgBurst/finished.size();
+		avgBurst = avgBurst/totalBursts;
+		avgTurn = avgTurn/totalTurns;
+		avgWait = avgWait/totalWaits;
 		
-		fileOut.write("-- average CPU burst time: "+avgBurst+"\n");
-		fileOut.write("-- average wait time: "+avgWait+"\n");
-		fileOut.write("-- average turnaround time: "+avgTurn+"\n");
+		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+"\n");
+		fileOut.write("-- average wait time: "+formatter.format(avgWait)+"\n");
+		fileOut.write("-- average turnaround time: "+formatter.format(avgTurn)+"\n");
 		fileOut.write("-- total number of context switches: "+csCount+"\n");
 		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
 		fileOut.flush();

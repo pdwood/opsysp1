@@ -17,6 +17,10 @@ public class Process{
 	private int remainingCPUBursts;
 	private int timeRemaining;
 	private int stateChangeTime;
+	private int waitCounter;
+	private int turnCounter;
+	private int waitTimer;
+	private int turnTimer;
 	
 	public Process(String id, int arrival, int burstTime, int bursts, int io) {
 		ID = id;
@@ -27,6 +31,11 @@ public class Process{
 		timeRemaining = burstTime;
 		remainingCPUBursts= numBursts;
 		stateChangeTime = arrival_time;
+		
+		waitCounter = 0;
+		turnCounter = 0;
+		waitTimer = 0;
+		turnTimer = 0;
 	}
 	
 	public String getID() {return ID;}
@@ -46,6 +55,14 @@ public class Process{
 	public String toString() {
 		return ("Process "+ID+", "+remainingCPUBursts+" bursts remain. ");
 	}
+	public void iterateWaitCounter() {waitCounter++;}
+	public void iterateTurnCounter() {turnCounter++;}
+	public void addToWaitTime(int t) {waitTimer += t;}
+	public void addToTurnTime(int t) {turnTimer += t;}
 	
+	public int getWaitCount() {return waitCounter;}
+	public int getTurnCount() {return turnCounter;}
+	public int getWaitTimer() {return waitTimer;}
+	public int getTurnTimer() {return turnTimer;}
 	
 }
