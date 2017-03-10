@@ -366,6 +366,8 @@ public class Project1 {
 			cooldown = (contextSwitchTime/2);
 			//change the preemptionState to EMPTYING
 			preemptState = State.EMPTYING;
+			
+			if(currentAlg == Algorithm.RR) timesliceRemaining = 0;
 			return true;
 		}
 		return false;
@@ -404,7 +406,6 @@ public class Project1 {
 			}
 			System.out.println("");
 		}
-		
 		while (io.size() > 0 && io.peek().getNextStateChange() <= currentTime) {
 			Process p = io.poll();
 			p.iterateWaitCounter();
@@ -518,7 +519,7 @@ public class Project1 {
 		case SRT:
 			return (queue.peek().getRemainingCPUTime() < currentProcess.getRemainingCPUTime());
 		case RR:
-			return (timesliceRemaining == timesliceMax && !queue.isEmpty());
+			return (timesliceRemaining == 0 && !queue.isEmpty());
 		}
 		return false;
 	}
