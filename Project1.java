@@ -511,7 +511,7 @@ public class Project1 {
 	 */
 	private static boolean checkPreemption(){
 		//Can't preempt an empty CPU or an empty queue
-		if (currentProcess == null || queue.isEmpty())
+		if (currentProcess == null || queue.isEmpty()) return false;
 		switch(currentAlg){
 		case FCFS:
 			return false; //FCFS dosen't preempt
