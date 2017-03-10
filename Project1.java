@@ -377,11 +377,16 @@ public class Project1 {
 			queue.add(p);
 			//TODO change this message if p would preempt
 			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
-			if (checkPreemption(currentAlg))
+			if (checkPreemption(currentAlg)){
 				System.out.print(" and will preempt " + currentProcess.getID());
+				Process temp = queue.poll();
+				System.out.println(" ["+queueStatus()+"]");
+				queue.add(temp);
+			}
+				
 			else
-				System.out.print("; added to ready queue");
-			System.out.println(" ["+queueStatus()+"]");
+				System.out.println("; added to ready queue ["+queueStatus()+"]");
+			
 			
 		}
 		
