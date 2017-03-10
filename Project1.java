@@ -343,7 +343,7 @@ public class Project1 {
 		if (currentProcess != null && preemptState == State.WAITING){
 			//Start a context switch (first half):
 			if (checkPreemption(currentAlg))
-				; //if the process has been preempted, dont print
+				/*do nothing*/ ;  //if the process has been preempted, don't print
 			else if (currentProcess.getRemainingCPUBursts() > 0){
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
 					+ " switching out of CPU; will block on I/O until time "
