@@ -29,8 +29,10 @@ public class Project1 {
 	
 	private static int csCount = 0;
 	private static int preemptCount = 0;
-	private static int contextSwitchTime = 6;
+	private static final int contextSwitchTime = 6;
 	private static int currentTime;
+	private static final int timesliceMax = 94;
+	private static int timesliceRemaining;
 	
 	private static BufferedWriter fileOut;
 	
@@ -131,7 +133,8 @@ public class Project1 {
 				int timeDelta = queryNextEvent();
 				if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
 				if(timeDelta == Integer.MAX_VALUE) break;
-				updateTimestamps(timeDelta);
+				currentTime += timeDelta;
+				if(currentAlg == Algorithm.RR) timesliceRemaining -= timeDelta;
 				
 				/* Go through all the sectors and update/check their statuses. 
 				 * Yes, order does matter, see Piazza "Several Questions". */
@@ -139,7 +142,7 @@ public class Project1 {
 				updateIO();
 				updateOutside();
 				updateQueue();
-				if (checkPreemption(currentAlg)){
+				if (checkPreemption()){
 					if (emptyCPU())
 						preemptCount++;
 				}
@@ -164,9 +167,7 @@ public class Project1 {
 	 * Returns the timestamp of the next point the simulation should advance to
 	 */
 	private static int queryNextEvent(){
-		//(May be difficult for SRT...)
 		int timeDelta=Integer.MAX_VALUE;
-		//String reason="none";
 		
 		//Possible next events: Outside arrival, process finishing CPU, process
 		//finishing I/O, others? ... SRT preemption, but that is weird.
@@ -174,11 +175,13 @@ public class Project1 {
 			timeDelta = outside.peek().getArrivalTime() - currentTime;
 			//reason = "outside entering ("+outside.peek().getArrivalTime()+"-"+currentTime+"="+timeDelta+").";
 		}
+		if(currentAlg == Algorithm.RR && timesliceRemaining < timeDelta && timesliceRemaining > 0){
+			timeDelta = timesliceRemaining;
+		}
 		if(cooldown > 0 && cooldown < timeDelta) {
 			timeDelta = cooldown;
 			//reason = "cooldown finished";
-		}
-		else if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
+		}else if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
 			timeDelta = currentProcess.getRemainingCPUTime();
 			//reason = "current process finished";
 		}
@@ -199,11 +202,11 @@ public class Project1 {
 	
 	/**
 	 * Updates the current time variable. This really shouldn't be a method of
-	 * it's own. We will discuss this tonight. 
+	 * its own. We will discuss this tonight. 
 	 */
-	private static void updateTimestamps(int timeDelta){
-		currentTime += timeDelta;
-	}
+	/*private static void updateTimestamps(int timeDelta){
+		
+	}*/
 	
 	/**
 	 * Parse process data from a file, create new processes with the data.
@@ -328,6 +331,9 @@ public class Project1 {
 					System.out.print(" with "+ currentProcess.getRemainingCPUTime() 
 						+"ms remaining");
 				System.out.println(" ["+queueStatus()+"]");
+				
+				//Refresh the timeslice for round robin algorithm
+				if(currentAlg == Algorithm.RR) timesliceRemaining = timesliceMax;
 			}
 		}	
 	}
@@ -339,7 +345,7 @@ public class Project1 {
 	private static boolean emptyCPU() {
 		if (currentProcess != null && preemptState == State.WAITING){
 			//Start a context switch (first half):
-			if (checkPreemption(currentAlg))
+			if (checkPreemption())
 				; //if the process has been preempted, dont print
 			else if (currentProcess.getRemainingCPUBursts() > 0){
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
@@ -398,7 +404,7 @@ public class Project1 {
 			queue.add(p);
 			//TODO change this message if p would preempt
 			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
-			if (checkPreemption(currentAlg)){
+			if (checkPreemption()){
 				System.out.print(" and will preempt " + currentProcess.getID());
 				Process temp = queue.poll();
 				System.out.println(" ["+queueStatus()+"]");
@@ -445,7 +451,7 @@ public class Project1 {
 			if (p.getArrivalTime() <= currentTime) {
 				queue.add(p);
 				System.out.print("time "+currentTime+"ms: Process "+p.getID()+" arrived");
-				if (checkPreemption(currentAlg)){
+				if (checkPreemption()){
 					System.out.print(" and will preempt " + currentProcess.getID());
 					Process temp = queue.poll();
 					System.out.println(" ["+queueStatus()+"]");
@@ -486,18 +492,17 @@ public class Project1 {
 	 * @param alg the algorithm to check with
 	 * @return true if there was a preemption, false otherwise
 	 */
-	private static boolean checkPreemption(Algorithm alg){
+	private static boolean checkPreemption(){
 		//Can't preempt an empty CPU or an empty queue
 		if (currentProcess == null || queue.isEmpty())
 			return false;	
-		switch(alg){
+		switch(currentAlg){
 		case FCFS:
 			return false; //FCFS dosen't preempt
 		case SRT:
-			if (queue.peek().getRemainingCPUTime() < currentProcess.getRemainingCPUTime())
-				return true;
-		case RR: //TODO set up preemption for RR
-			break; 
+			return (queue.peek().getRemainingCPUTime() < currentProcess.getRemainingCPUTime());
+		case RR:
+			return (timesliceRemaining == timesliceMax && !queue.isEmpty());
 		}
 		return false;
 	}
