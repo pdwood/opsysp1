@@ -337,7 +337,11 @@ public class Project1 {
 	 * -- If there was a context switch, increment the context switch counter.
 	 */
 	private static void updateQueue(){
+		//check if cpu is empty
+		//if (cpu == null)
+		//check for preemption
 		
+		//initiate context switch (if cpu empty)
 	}
 	
 	private static String generateStatistics(String algo) {
