@@ -31,11 +31,6 @@ public class Project1 {
 	private static int timeToNextEvent;
 	private static int currentTime;
 	
-	private enum GavinWantsAnEnum{
-		FIRST_VALUE, SECOND_VALUE, THIRD_VALUE;
-		
-	}
-	
 	private static boolean shouldPreempt(){ return false; } //TODO
 	private static void contextSwitch() {} //TODO
 	
@@ -78,14 +73,6 @@ public class Project1 {
 				else System.out.println("\tCPU Status: Empty");
 				System.out.println("\tFinished Size: "+finished.size());
 			}
-			//TODO Account for context switch!
-			
-			/* Removed the condition "currentProcess == null", because
-			 * sometimes the processor will be empty for a while, while 
-			 * everything is off doing IO, and it shouldn't switch. */
-			if(currentProcess != null && currentProcess.getRemainingCPUTime() == 0 || shouldPreempt()){
-				contextSwitch();
-			}
 			
 			int timeDelta = queryNextEvent();
 			if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
@@ -122,19 +109,11 @@ public class Project1 {
 		else if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
 			timeDelta = currentProcess.getRemainingCPUTime();
 			reason = "current process finished";
-<<<<<<< HEAD
 		}
 		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
 			timeDelta = io.peek().getNextStateChange()-currentTime;
 			reason = "process exiting IO";
 		}
-=======
-		}
-		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
-			timeDelta = io.peek().getNextStateChange()-currentTime;
-			reason = "process exiting IO";
-		}
->>>>>>> c79fe6c219e4187d80cba19da203618b9420b15f
 		/* If the processor is empty and there are more processes and there is no cooldown,
 		 * next event is now, it is putting process in currentProcess. */
 		if(currentProcess == null && queue.size() > 0 && cooldown == 0){
@@ -343,6 +322,7 @@ public class Project1 {
 	 */
 	private static void updateQueue(){
 		//check if cpu is empty
+		//check for preemption
 		//if (cpu == null)
 		//check for preemption
 		
