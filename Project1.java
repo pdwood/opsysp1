@@ -196,12 +196,13 @@ public class Project1 {
 		if (currentProcess != null && cooldown == 0) {
 			currentProcess.decrementTime(elapsedTime);
 			
-			// If the current process is done with it's current CPU Burst...
+			// If the current process is done with its current CPU Burst...
 			if (currentProcess.getRemainingCPUTime() <= 0) {
+				//decrement the number of remaining bursts
 				currentProcess.decrementBursts();
 				
 				/* If it has bursts remaining, move it to the IO. */
-				if (currentProcess.getRemainingCPUBursts() != 0) {
+				if (currentProcess.getRemainingCPUBursts() > 0) {
 					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
 					io.add(currentProcess);
 					System.out.print("time "+currentTime+"ms: Process "+currentProcess.getID()+" completed a CPU burst; ");
@@ -231,7 +232,7 @@ public class Project1 {
 		}
 		
 		/* If there is nothing in the processor, and the processor is done
-		 * cooling down, and there is something waiting in the CPU. */
+		 * cooling down, and there is something waiting in the queue. */
 		if (currentProcess == null && cooldown == 0 && queue.size()!=0) {
 			// If there is something in the queue, pop it in the processor, and
 			// have half a cs switch to get it into the processor.
