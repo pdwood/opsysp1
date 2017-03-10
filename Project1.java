@@ -136,8 +136,11 @@ public class Project1 {
 				
 				i++;//used for debug
 			}
-			System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
-			System.out.println();
+			if (currentAlg != Algorithm.RR){
+				System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
+				System.out.println();
+			}else
+				System.out.print("time "+currentTime+"ms: Simulator ended for " + currentAlg);
 		}
 	}
 	
