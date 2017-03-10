@@ -1,10 +1,10 @@
 /*
-	CSCI 4210 Operating Systems Project 1
-	
-	Made by:
-	Kyle Fawcett fawcek
-	Peter Wood woodp
-	Gavin Petilli petilg
+ * CSCI 4210 Operating Systems Project 1
+ * 
+ * Made by:
+ * Kyle Fawcett fawcek
+ * Peter Wood woodp
+ * Gavin Petilli petilg
 */
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +23,7 @@ public class Project1 {
 	private static PriorityQueue<Process> io;
 	private static PriorityQueue<Process> outside;
 	private static Queue<Process> finished;
+	private static boolean debugging = false;
 	
 	private static int csCount = 0;
 	private static int preemptCount = 0;
@@ -36,6 +37,7 @@ public class Project1 {
 	public static void main(String[] args) {
 		
 		//initialize local variables
+		finished = new LinkedList<Process>();
 		queue = new LinkedList<Process>(); //TODO this type should be dynamically decided
 		io = new PriorityQueue<Process>(new Comparator<Process>(){
 			public int compare(Process a, Process b){
@@ -50,28 +52,38 @@ public class Project1 {
 		});
 		
 		//retrieve process information from file
+		if (args.length == 0) {
+			System.out.println("ERROR: No input file.");
+			return;
+		}
 		parseFile(args[0]);
 		
 		currentTime=0;
 		
 		//running loop for the program, loops until all processes have completed
+		int i=0;
 		while(true){
+			if (debugging) {
+				System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
+				System.out.println("\tCooldown: "+cooldown);
+				System.out.println("\tOutside Size: "+outside.size());
+				System.out.println("\tQueue Size: "+queue.size());
+				System.out.println("\tIO Size: "+io.size());
+				if (currentProcess != null) System.out.println("\tCPU Status: "+currentProcess);
+				else System.out.println("\tCPU Status: Empty");
+				System.out.println("\tFinished Size: "+finished.size());
+			}
 			//TODO Account for context switch!
-			
-			/* This code is being removed as it is already being done in the 
-			 * updateOutside() function. 
-			if(outside.peek()!=null && outside.peek().getArrivalTime() == currentTime){
-				queue.add(outside.poll());
-			} */
 			
 			/* Removed the condition "currentProcess == null", because
 			 * sometimes the processor will be empty for a while, while 
 			 * everything is off doing IO, and it shouldn't switch. */
-			if(currentProcess.getRemainingCPUTime() == 0 || shouldPreempt()){
+			if(currentProcess != null && currentProcess.getRemainingCPUTime() == 0 || shouldPreempt()){
 				contextSwitch();
 			}
 			
 			int timeDelta = queryNextEvent();
+			if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
 			if(timeDelta == Integer.MAX_VALUE) break;
 			updateTimestamps(timeDelta);
 			
@@ -80,7 +92,7 @@ public class Project1 {
 			updateCPU(timeDelta);
 			updateIO();
 			updateOutside();
-			
+			i++;
 		}
 	}
 	
@@ -90,30 +102,34 @@ public class Project1 {
 	private static int queryNextEvent(){
 		//(May be difficult for SRT...)
 		int timeDelta=Integer.MAX_VALUE;
+		String reason="none";
 		
 		//Possible next events: Outside arrival, process finishing CPU, process
 		//finishing IO, others? ... SRT preemption, but that is weird.
 		if(outside.size() > 0) {
 			timeDelta = outside.peek().getArrivalTime() - currentTime;
-		}
-		if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
-			timeDelta = currentProcess.getRemainingCPUTime();
+			reason = "outside entering ("+outside.peek().getArrivalTime()+"-"+currentTime+"="+timeDelta+").";
 		}
 		if(cooldown > 0 && cooldown < timeDelta) {
 			timeDelta = cooldown;
+			reason = "cooldown finished";
 		}
-		// Changed this one to timestamp as opposed to relative time, as IO is 
-		// based off of timestamps.
-		int nextTimeState = Integer.MAX_VALUE;
-		if(io.size() > 0 && io.peek().getNextStateChange() < nextTimeState) {
-			nextTimeState = io.peek().getNextStateChange();
+		else if(currentProcess != null && currentProcess.getRemainingCPUTime() < timeDelta) {
+			timeDelta = currentProcess.getRemainingCPUTime();
+			reason = "current process finished";
 		}
-		// Then goes backwards and calculates timeDelta based off of timestamp.
-		// (Max value condition to ensure main exiting status. 
-		if (nextTimeState-currentTime < timeDelta && nextTimeState != Integer.MAX_VALUE) {
-			timeDelta = nextTimeState - currentTime;
+		if(io.size() > 0 && io.peek().getNextStateChange()-currentTime < timeDelta) {
+			timeDelta = io.peek().getNextStateChange()-currentTime;
+			reason = "process exiting IO";
+		}
+		/* If the processor is empty and there are more processes and there is no cooldown,
+		 * next event is now, it is putting process in currentProcess. */
+		if(currentProcess == null && queue.size() > 0 && cooldown == 0){
+			timeDelta = 0;
+			reason = "process entering";
 		}
 		
+		//System.out.println("Next process is occuring because: "+reason);
 		return timeDelta;
 	}
 	
@@ -180,19 +196,23 @@ public class Project1 {
 		if (currentProcess != null && cooldown == 0) {
 			currentProcess.decrementTime(elapsedTime);
 			
-			// If the current process is done with it's current CPU Burst...
+			// If the current process is done with its current CPU Burst...
 			if (currentProcess.getRemainingCPUTime() <= 0) {
+				//decrement the number of remaining bursts
 				currentProcess.decrementBursts();
 				
 				/* If it has bursts remaining, move it to the IO. */
-				if (currentProcess.getRemainingCPUBursts() != 0) {
+				if (currentProcess.getRemainingCPUBursts() > 0) {
 					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
 					io.add(currentProcess);
+					System.out.print("time "+currentTime+"ms: Process "+currentProcess.getID()+" completed a CPU burst; ");
+					System.out.println(currentProcess.getRemainingCPUBursts()+" bursts to go ["+queueStatus()+"]");
 				}
 				
 				/* If it has finished all bursts, set nextStateChange variable
 				 * appropriately, and move it to the finished queue. */
 				if (currentProcess.getRemainingCPUBursts() == 0) {
+					System.out.println("time "+currentTime+"ms: Process "+currentProcess.getID()+" terminated ["+queueStatus()+"]");
 					currentProcess.setStateChangeTime(currentTime+contextSwitchTime/2);
 					finished.add(currentProcess);
 				}
@@ -211,12 +231,16 @@ public class Project1 {
 			cooldown = cooldown - elapsedTime;
 		}
 		
-		// If there is nothing in the processor, and the processor is done cooling down
-		if (currentProcess == null && cooldown == 0) {
+		/* If there is nothing in the processor, and the processor is done
+		 * cooling down, and there is something waiting in the queue. */
+		if (currentProcess == null && cooldown == 0 && queue.size()!=0) {
 			// If there is something in the queue, pop it in the processor, and
 			// have half a cs switch to get it into the processor.
 			cooldown = contextSwitchTime/2;
 			currentProcess = queue.poll();
+			currentProcess.resetBurstTime();
+			
+			System.out.println("time "+(currentTime+contextSwitchTime/2)+"ms: Process "+currentProcess.getID()+" started using the CPU ["+queueStatus()+"]");
 		}
 		
 		
@@ -228,7 +252,6 @@ public class Project1 {
 	 */
 	private static void updateIO(){
 		Iterator<Process> iter;
-		boolean debugging = false;
 		
 		if (debugging) {
 			System.out.print(currentTime+": IO List before update: ");
@@ -240,13 +263,11 @@ public class Project1 {
 			System.out.println("");
 		}
 		
-		iter = io.iterator();
-		while (iter.hasNext()) {
-			Process p = iter.next();
-			if (p.getNextStateChange() <= currentTime) {
-				queue.add(p);
-				iter.remove();
-			}
+		while (io.size() > 0 && io.peek().getNextStateChange() <= currentTime) {
+			Process p = io.poll();
+			queue.add(p);
+			System.out.println("time "+currentTime+"ms: Process "+p.getID()+" completed I/O; added to ready queue ["+queueStatus()+"]");
+			
 		}
 		
 		if (debugging) {
@@ -267,7 +288,6 @@ public class Project1 {
 	 */
 	private static void updateOutside(){
 		Iterator<Process> iter;
-		boolean debugging = false;
 		
 		if (debugging) {
 			System.out.print(currentTime+": Outside List before update: ");
@@ -279,18 +299,19 @@ public class Project1 {
 			System.out.println("");
 		}
 		
-		iter = io.iterator();
+		iter = outside.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
 				queue.add(p);
+				System.out.println("time "+currentTime+"ms: Process "+p.getID()+" arrived and added to ready queue ["+queueStatus()+"]");
 				iter.remove();
 			}
 		}
 		
 		if (debugging) {
-			System.out.print(currentTime+": outside List after update: ");
-			iter = io.iterator();
+			System.out.print(currentTime+": Outside List after update: ");
+			iter = outside.iterator();
 			while (iter.hasNext()) {
 				Process p = iter.next();
 				System.out.print(p.getArrivalTime()+", ");
@@ -308,7 +329,11 @@ public class Project1 {
 	 * -- If there was a context switch, increment the context switch counter.
 	 */
 	private static void updateQueue(){
+		//check if cpu is empty
+		//if (cpu == null)
+		//check for preemption
 		
+		//initiate context switch (if cpu empty)
 	}
 	
 	private static String generateStatistics(String algo) {
@@ -333,7 +358,18 @@ public class Project1 {
 		return retVal;
 	}
 	
-	
+	private static String queueStatus() {
+		if (queue.size() == 0)
+			return "Q <empty>";
+		
+		String retVal = "Q";
+		Iterator<Process> iter = queue.iterator();
+		while (iter.hasNext()) {
+			Process p = iter.next();
+			retVal += " "+p.getID();
+		}
+		return retVal;
+	}
 	
 	
 };
