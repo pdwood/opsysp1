@@ -567,7 +567,7 @@ public class Project1 {
 
 		avgBurst /= totalBursts;
 		avgTurn /= totalTurns;
-		avgWait /= csCount;
+		avgWait /= totalBursts;
 		
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
 		fileOut.write("-- average wait time: "+formatter.format(avgWait)+" ms\n");
