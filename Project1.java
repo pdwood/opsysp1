@@ -563,9 +563,12 @@ public class Project1 {
 			avgTurn += p.getTurnTime();
 			avgWait += p.getWaitTimer();
 		}
-
+		
 		avgBurst /= totalBursts;
 		avgTurn /= totalTurns;
+		
+		if (currentAlg == Algorithm.RR)
+			avgWait += preemptCount * 3;
 		avgWait /= totalBursts;
 		
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
