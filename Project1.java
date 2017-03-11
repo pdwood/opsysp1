@@ -31,7 +31,7 @@ public class Project1 {
 
 	private static final int contextSwitchTime = 6;
 	private static final int timesliceMax = 94;
-	
+
 	private static int csCount;
 	private static int preemptCount;
 	private static int currentTime;
@@ -73,8 +73,8 @@ public class Project1 {
 		for (Algorithm alg: Algorithm.values()){
 			csCount = 0;
 			preemptCount = 0;
-			
-			
+
+
 			currentAlg = alg;
 			//initialize local variables
 			finished = new LinkedList<Process>();
@@ -313,21 +313,26 @@ public class Project1 {
 					queue.add(currentProcess);
 				}
 				/* Else, If the process has bursts remaining, move it to the I/O and reset the Burst time. */
-				else if (currentProcess.getRemainingCPUBursts() > 0) {
-					currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
-					currentProcess.resetBurstTime();
-					io.add(currentProcess);
-				}
-				/* Else, If it has finished all bursts, set nextStateChange variable
-				 * appropriately, and move it to the finished queue. */
-				else if (currentProcess.getRemainingCPUBursts() == 0) {
-					currentProcess.setStateChangeTime(currentTime);
-					finished.add(currentProcess);
-				}
-				//Error checking...
-				else if (currentProcess.getRemainingCPUBursts() < 0){
-					throw new RuntimeException("ERROR:The process has less than zero bursts remaining,"
-							+ " this should not happen.");
+				else {					
+					//Mark that the process's turnaround is finished.
+					currentProcess.finishTurnaround(currentTime);
+					
+					if (currentProcess.getRemainingCPUBursts() > 0) {
+						currentProcess.setStateChangeTime(currentTime+currentProcess.getIOTime());
+						currentProcess.resetBurstTime();
+						io.add(currentProcess);
+					}
+					/* Else, If it has finished all bursts, set nextStateChange variable
+					 * appropriately, and move it to the finished queue. */
+					else if (currentProcess.getRemainingCPUBursts() == 0) {
+						currentProcess.setStateChangeTime(currentTime);
+						finished.add(currentProcess);
+					}
+					//Error checking...
+					else if (currentProcess.getRemainingCPUBursts() < 0){
+						throw new RuntimeException("ERROR:The process has less than zero bursts remaining,"
+								+ " this should not happen.");
+					}
 				}
 				//clear the CPU pointer and set the CPU to a waiting state
 				preemptState = State.WAITING;
@@ -420,10 +425,10 @@ public class Project1 {
 		}
 		while (io.size() > 0 && io.peek().getNextStateChange() <= currentTime) {
 			Process p = io.poll();
-			p.iterateWaitCounter();
-			p.iterateTurnCounter();
+			//p.iterateWaitCounter();
+			//p.iterateTurnCounter();
+			p.startTurnaround(currentTime);
 			queue.add(p);
-			//TODO change this message if p would preempt
 			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
 			if (checkPreemption()){
 				System.out.print(" and will preempt " + currentProcess.getID());
@@ -552,15 +557,15 @@ public class Project1 {
 			totalWaits += p.getWaitCount();
 			totalTurns += p.getTurnCount();
 
-
 			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
-			avgTurn += p.getTurnTimer();
+			avgTurn += p.getTurnTime();
 			avgWait += p.getWaitTimer();
 		}
-
-		avgBurst = avgBurst/totalBursts;
-		avgTurn = avgTurn/totalTurns;
-		avgWait = avgWait/totalWaits;
+System.out.println("Total turnaround time: "+avgTurn);
+System.out.println("Total number of turnarounds: "+totalTurns);
+		avgBurst /= totalBursts;
+		avgTurn /= totalTurns;
+		avgWait /= totalWaits;
 
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
 		fileOut.write("-- average wait time: "+formatter.format(avgWait)+" ms\n");
@@ -568,6 +573,12 @@ public class Project1 {
 		fileOut.write("-- total number of context switches: "+csCount+"\n");
 		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
 		fileOut.flush();
+		
+		if(avgBurst + avgWait + contextSwitchTime != avgTurn){
+			//Technically this only holds for non-preemptive algorithms.
+			//But where does the IO time go?
+			System.err.println("Calculation error: avgBurst + avgWait + t_cs != avgTurn");
+		}
 	}
 
 	private static String queueStatus() {
