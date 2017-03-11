@@ -17,6 +17,7 @@ public class Process{
 	private int remainingCPUBursts;
 	private int timeRemaining;
 	private int stateChangeTime;
+	
 	private int waitCounter;
 	private int turnCounter;
 	private int waitTimer;

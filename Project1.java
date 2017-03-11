@@ -29,11 +29,12 @@ public class Project1 {
 	private static Queue<Process> finished;
 	private static boolean debugging = false;
 
-	private static int csCount = 0;
-	private static int preemptCount = 0;
 	private static final int contextSwitchTime = 6;
-	private static int currentTime;
 	private static final int timesliceMax = 94;
+	
+	private static int csCount;
+	private static int preemptCount;
+	private static int currentTime;
 	private static int timesliceRemaining;
 
 	private static BufferedWriter fileOut;
@@ -70,6 +71,10 @@ public class Project1 {
 
 		//loop through each of the algorithms
 		for (Algorithm alg: Algorithm.values()){
+			csCount = 0;
+			preemptCount = 0;
+			
+			
 			currentAlg = alg;
 			//initialize local variables
 			finished = new LinkedList<Process>();
@@ -330,6 +335,7 @@ public class Project1 {
 			}
 			//If the CPU is currently context switching a new process in (and the cooldown is 0).
 			else if (preemptState == State.INITIALIZING) {
+				csCount++;
 				//Set the CPU to a WAITING state
 				preemptState = State.WAITING;
 				System.out.print("time "+ currentTime +"ms: Process "
@@ -556,9 +562,9 @@ public class Project1 {
 		avgTurn = avgTurn/totalTurns;
 		avgWait = avgWait/totalWaits;
 
-		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+"\n");
-		fileOut.write("-- average wait time: "+formatter.format(avgWait)+"\n");
-		fileOut.write("-- average turnaround time: "+formatter.format(avgTurn)+"\n");
+		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
+		fileOut.write("-- average wait time: "+formatter.format(avgWait)+" ms\n");
+		fileOut.write("-- average turnaround time: "+formatter.format(avgTurn)+" ms\n");
 		fileOut.write("-- total number of context switches: "+csCount+"\n");
 		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
 		fileOut.flush();
