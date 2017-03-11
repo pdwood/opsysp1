@@ -507,11 +507,11 @@ public class Project1 {
 	 * If the CPU is empty push the next queued object into the CPU
 	 */
 	private static void updateQueue(int elapsedTime){
-		Iterator<Process> iter = queue.iterator();
+		/*Iterator<Process> iter = queue.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			//p.addToTurnTime(elapsedTime);
-		}
+		}*/
 
 		//if the queue is empty, return
 		if (queue.isEmpty())
@@ -552,12 +552,12 @@ public class Project1 {
 
 		fileOut.write("Algorithm "+currentAlg+"\n");
 		double avgBurst=0, avgWait=0, avgTurn=0;
-		int totalBursts=0, totalWaits=0, totalTurns=0;
+		int totalBursts=0, /*totalWaits=0,*/ totalTurns=0;
 		Iterator<Process> iter = finished.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			totalBursts += p.getNumberOfBursts();
-			totalTurns += p.getTurnCount();
+			totalTurns += p.getNumberOfBursts();
 
 			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
 			avgTurn += p.getTurnTime();

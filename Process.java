@@ -20,8 +20,7 @@ public class Process{
 	
 	private int turnStart;
 	private int turnTotal;
-	private int turnCount;
-	
+		
 	private int waitTimer;
 	
 	public Process(String id, int arrival, int burstTime, int bursts, int io) {
@@ -36,7 +35,6 @@ public class Process{
 		
 		turnStart = arrival_time;
 		turnTotal = 0;
-		turnCount = 0;
 		
 		waitTimer = 0;
 	}
@@ -62,14 +60,10 @@ public class Process{
 		turnStart = timestamp;
 	}
 	public void finishTurnaround(int timestamp){
-		turnTotal = timestamp - turnStart;
-		++turnCount;
+		turnTotal += timestamp - turnStart;
 	}
 	public int getTurnTime(){
 		return turnTotal;
-	}
-	public int getTurnCount() {
-		return turnCount;
 	}
 	
 	public void addToWaitTime(int t) {waitTimer += t;}
