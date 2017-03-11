@@ -78,12 +78,10 @@ public class Process{
 		return turnCount;
 	}
 	
-	public void iterateWaitCounter() {waitCounter++;}
 	public void iterateTurnCounter() {turnCounter++;}
 	public void addToWaitTime(int t) {waitTimer += t;}
 	public void addToTurnTime(int t) {turnTimer += t;}
 	
-	public int getWaitCount() {return waitCounter;}
 	public int getWaitTimer() {return waitTimer;}
 	public int getTurnTimer() {return turnTimer;}
 	
