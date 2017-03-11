@@ -18,6 +18,10 @@ public class Process{
 	private int timeRemaining;
 	private int stateChangeTime;
 	
+	private int turnStart;
+	private int turnTotal;
+	private int turnCount;
+	
 	private int waitCounter;
 	private int turnCounter;
 	private int waitTimer;
@@ -32,6 +36,10 @@ public class Process{
 		timeRemaining = burstTime;
 		remainingCPUBursts= numBursts;
 		stateChangeTime = arrival_time;
+		
+		turnStart = arrival_time;
+		turnTotal = 0;
+		turnCount = 0;
 		
 		turnCounter = 0;
 		waitTimer = 0;
@@ -54,12 +62,28 @@ public class Process{
 	public int getRemainingCPUBursts() {return remainingCPUBursts;}
 	public String toString() {
 		return ("Process "+ID+", "+remainingCPUBursts+" bursts remain. ");
+	}	
+	public void startTurnaround(int timestamp){
+		turnStart = timestamp;
 	}
+	public void finishTurnaround(int timestamp){
+		turnTotal = timestamp - turnStart;
+		System.out.println("Finished a turnaround of "+(timestamp-turnStart));
+		++turnCount;
+	}
+	public int getTurnTime(){
+		return turnTotal;
+	}
+	public int getTurnCount() {
+		return turnCount;
+	}
+	
+	public void iterateWaitCounter() {waitCounter++;}
 	public void iterateTurnCounter() {turnCounter++;}
 	public void addToWaitTime(int t) {waitTimer += t;}
 	public void addToTurnTime(int t) {turnTimer += t;}
 	
-	public int getTurnCount() {return turnCounter;}
+	public int getWaitCount() {return waitCounter;}
 	public int getWaitTimer() {return waitTimer;}
 	public int getTurnTimer() {return turnTimer;}
 	
