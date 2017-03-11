@@ -233,6 +233,7 @@ public class Project1 {
 			return false;			
 		}		
 	}
+	
 	/* Helper function to parseFile(string).
 	 * This will parse the particular line.
 	 */
@@ -243,6 +244,7 @@ public class Project1 {
 			throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
 	}
+	
 	/**
 	 * If the cpu is empty, do nothing.
 	 * If the cpu is on cooldown, reduce cooldown.
