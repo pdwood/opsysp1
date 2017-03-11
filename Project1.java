@@ -305,11 +305,10 @@ public class Project1 {
 			}
 			//If the CPU is context switching the current process out (and the cooldown is 0)
 			else if (preemptState == State.EMPTYING) {
-				currentProcess.iterateWaitCounter();
-
 				/* If the process is not finished with the current burst, return it to the queue.
 				 * This should only be caused by a preemption. */
 				if (currentProcess.getRemainingCPUTime() > 0) {
+					currentProcess.setStateChangeTime(currentTime);
 					queue.add(currentProcess);
 				}
 				/* Else, If the process has bursts remaining, move it to the I/O and reset the Burst time. */
@@ -420,10 +419,8 @@ public class Project1 {
 		}
 		while (io.size() > 0 && io.peek().getNextStateChange() <= currentTime) {
 			Process p = io.poll();
-			p.iterateWaitCounter();
 			p.iterateTurnCounter();
 			queue.add(p);
-			//TODO change this message if p would preempt
 			System.out.print("time "+currentTime+"ms: Process "+p.getID()+" completed I/O");
 			if (checkPreemption()){
 				System.out.print(" and will preempt " + currentProcess.getID());
@@ -470,7 +467,6 @@ public class Project1 {
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
-				p.iterateWaitCounter();
 				p.iterateTurnCounter();
 				queue.add(p);
 				System.out.print("time "+currentTime+"ms: Process "+p.getID()+" arrived");
@@ -505,7 +501,6 @@ public class Project1 {
 		Iterator<Process> iter = queue.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
-			p.addToWaitTime(elapsedTime);
 			p.addToTurnTime(elapsedTime);
 		}
 
@@ -513,8 +508,12 @@ public class Project1 {
 		if (queue.isEmpty())
 			return;
 		//If the CPU is empty, push the first process in the queue into the CPU
-		if (currentProcess == null && preemptState == State.WAITING)
+		if (currentProcess == null && preemptState == State.WAITING){
 			fillCPU(queue.poll());
+			//Add the time in the queue to the current wait time and increment the number of waits
+			currentProcess.addToWaitTime(currentTime-currentProcess.getNextStateChange());	
+		}
+			
 	}
 
 	/**
@@ -549,18 +548,18 @@ public class Project1 {
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			totalBursts += p.getNumberOfBursts();
-			totalWaits += p.getWaitCount();
 			totalTurns += p.getTurnCount();
 
 
 			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
 			avgTurn += p.getTurnTimer();
 			avgWait += p.getWaitTimer();
+			System.out.println("Process " + p.getID() + " waited for " + p.getWaitTimer() + "ms" );
 		}
 
 		avgBurst = avgBurst/totalBursts;
 		avgTurn = avgTurn/totalTurns;
-		avgWait = avgWait/totalWaits;
+		avgWait = avgWait/csCount;
 
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
 		fileOut.write("-- average wait time: "+formatter.format(avgWait)+" ms\n");
