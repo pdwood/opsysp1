@@ -41,7 +41,6 @@ public class Process{
 		turnTotal = 0;
 		turnCount = 0;
 		
-		waitCounter = 0;
 		turnCounter = 0;
 		waitTimer = 0;
 		turnTimer = 0;
@@ -63,8 +62,7 @@ public class Process{
 	public int getRemainingCPUBursts() {return remainingCPUBursts;}
 	public String toString() {
 		return ("Process "+ID+", "+remainingCPUBursts+" bursts remain. ");
-	}
-	
+	}	
 	public void startTurnaround(int timestamp){
 		turnStart = timestamp;
 	}
