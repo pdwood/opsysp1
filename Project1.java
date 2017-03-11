@@ -554,12 +554,12 @@ public class Project1 {
 			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
 			avgTurn += p.getTurnTimer();
 			avgWait += p.getWaitTimer();
-			System.out.println("Process " + p.getID() + " waited for " + p.getWaitTimer() + "ms" );
+			System.out.println("Process " + p.getID() + " waited for " + p.getWaitTimer() + "ms" ); //TODO Remove this
 		}
 
 		avgBurst = avgBurst/totalBursts;
 		avgTurn = avgTurn/totalTurns;
-		avgWait = avgWait/csCount;
+		avgWait = avgWait/totalBursts;
 
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
 		fileOut.write("-- average wait time: "+formatter.format(avgWait)+" ms\n");
