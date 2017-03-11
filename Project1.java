@@ -273,7 +273,7 @@ public class Project1 {
 			if (preemptState == State.WAITING) {
 				//decrement the remaining process time by the elapsed time
 				currentProcess.decrementTime(elapsedTime);
-				currentProcess.addToTurnTime(elapsedTime);
+				//currentProcess.addToTurnTime(elapsedTime);
 
 				// If the current process is done with its current CPU Burst...
 				if (currentProcess.getRemainingCPUTime() <= 0) {
@@ -510,7 +510,7 @@ public class Project1 {
 		Iterator<Process> iter = queue.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
-			p.addToTurnTime(elapsedTime);
+			//p.addToTurnTime(elapsedTime);
 		}
 
 		//if the queue is empty, return
