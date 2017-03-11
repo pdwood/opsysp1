@@ -562,7 +562,6 @@ public class Project1 {
 			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
 			avgTurn += p.getTurnTime();
 			avgWait += p.getWaitTimer();
-			System.out.println("Process " + p.getID() + " waited for " + p.getWaitTimer() + "ms" ); //TODO Remove this
 		}
 
 		avgBurst /= totalBursts;

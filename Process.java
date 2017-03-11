@@ -67,7 +67,6 @@ public class Process{
 	}
 	public void finishTurnaround(int timestamp){
 		turnTotal = timestamp - turnStart;
-		System.out.println("Finished a turnaround of "+(timestamp-turnStart));
 		++turnCount;
 	}
 	public int getTurnTime(){
