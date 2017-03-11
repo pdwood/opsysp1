@@ -351,8 +351,13 @@ public class Project1 {
 	private static boolean emptyCPU() {
 		if (currentProcess != null && preemptState == State.WAITING){
 			//Start a context switch (first half):
-			if (!checkPreemption())
-				/*do nothing*/ ;  //if the process has been preempted, don't print
+			if (checkPreemption()){
+				if (currentAlg == Algorithm.RR && timesliceRemaining == 0)
+					System.out.println("time "+currentTime+"ms: Time slice expired;"
+						+ " process " + currentProcess.getID()
+						+ " preempted with " + (currentProcess.getRemainingCPUTime())
+						+ "ms to go ["+queueStatus()+"]");
+			} //if the process has been preempted, don't print
 			else if (currentProcess.getRemainingCPUBursts() > 0){
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
 					+ " switching out of CPU; will block on I/O until time "
@@ -512,7 +517,8 @@ public class Project1 {
 	 */
 	private static boolean checkPreemption(){
 		//Can't preempt an empty CPU or an empty queue
-		if (currentProcess == null || queue.isEmpty()) return false;
+		if (currentProcess == null || queue.isEmpty()) 
+			return false;
 		switch(currentAlg){
 		case FCFS:
 			return false; //FCFS dosen't preempt
