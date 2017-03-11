@@ -22,7 +22,6 @@ public class Process{
 	private int turnTotal;
 	private int turnCount;
 	
-	private int waitCounter;
 	private int turnCounter;
 	private int waitTimer;
 	private int turnTimer;
