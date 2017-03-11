@@ -5,7 +5,7 @@
  * Kyle Fawcett fawcek
  * Peter Wood woodp
  * Gavin Petilli petilg
-*/
+ */
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -20,7 +20,7 @@ import java.util.Queue;
 import java.util.Scanner;
 
 public class Project1 {
-	
+
 	private static Process currentProcess;
 	private static int cooldown; //time until the cpu can be used (because of context switching)
 	private static Queue<Process> queue;
@@ -28,31 +28,31 @@ public class Project1 {
 	private static PriorityQueue<Process> outside;
 	private static Queue<Process> finished;
 	private static boolean debugging = false;
-	
+
 	private static int csCount = 0;
 	private static int preemptCount = 0;
 	private static final int contextSwitchTime = 6;
 	private static int currentTime;
 	private static final int timesliceMax = 94;
 	private static int timesliceRemaining;
-	
+
 	private static BufferedWriter fileOut;
-	
+
 	//Enum for CPU state
 	private enum State{
 		WAITING, EMPTYING, INITIALIZING;
 	}
 	private static State preemptState = State.WAITING;
-	
+
 	//Enum for the different algorithms
 	private enum Algorithm{
 		FCFS, SRT, RR;
 		//toString returns the declared name of the constant by default
 	}
 	private static Algorithm currentAlg;
-	
+
 	public static void main(String[] args) {
-		
+
 		//Ensure files are correct before starting
 		if (args.length == 0) {
 			System.err.println("ERROR: No input file given.");
@@ -60,20 +60,20 @@ public class Project1 {
 		}else if(args.length == 1){
 			System.err.println("ERROR: No output file given.");
 		}
-		
+
 		//Open the output file
 		try {
 			fileOut = new BufferedWriter(new FileWriter(new File(args[1])));
 		} catch (IOException e) {
 			System.err.println("ERROR: Cannot open output file for writing.");
 		}
-		
+
 		//loop through each of the algorithms
 		for (Algorithm alg: Algorithm.values()){
 			currentAlg = alg;
 			//initialize local variables
 			finished = new LinkedList<Process>();
-			
+
 			//select the queue type based on the current algorithm
 			switch(currentAlg){
 			case FCFS:
@@ -92,7 +92,7 @@ public class Project1 {
 				queue = new LinkedList<Process>();
 				break;
 			}
-			
+
 			io = new PriorityQueue<Process>(new Comparator<Process>(){
 				public int compare(Process a, Process b){
 					return a.getNextStateChange() - b.getNextStateChange();
@@ -106,22 +106,22 @@ public class Project1 {
 					return a.getArrivalTime() - b.getArrivalTime();
 				}
 			});
-			
+
 			//retrieve process information from file
 			if (!parseFile(args[0])){
 				System.err.println("ERROR: Could not read given input file.");
 				return;
 			}
-			
+
 			currentTime=0;
-			
+
 			int i=0;//used for debug
-			
+
 			//running loop for the program, loops until all processes have completed
-			
+
 			System.out.print("time "+currentTime+"ms: Simulator started for " + currentAlg);
 			System.out.println(" ["+queueStatus()+"]");
-			
+
 			while(true){
 				if (debugging) {
 					System.out.println("\nWhile Loop Status: "+currentTime+"ms. (Step "+i+").");
@@ -133,13 +133,12 @@ public class Project1 {
 					else System.out.println("\tCPU Status: Empty");
 					System.out.println("\tFinished Size: "+finished.size());
 				}
-				
+
 				int timeDelta = queryNextEvent();
 				if (debugging) System.out.println("\tNext event at time: "+currentTime+"+"+timeDelta);
 				if(timeDelta == Integer.MAX_VALUE) break;
 				currentTime += timeDelta;
-				if(currentAlg == Algorithm.RR) timesliceRemaining -= timeDelta;
-				
+
 				/* Go through all the sectors and update/check their statuses. 
 				 * Yes, order does matter, see Piazza "Several Questions". */
 				updateCPU(timeDelta);
@@ -150,15 +149,15 @@ public class Project1 {
 					if (emptyCPU())
 						preemptCount++;
 				}
-				
+
 				i++;//used for debug
 			}
-			
+
 			System.out.println("time "+currentTime+"ms: Simulator ended for " + currentAlg);
 			if (currentAlg != Algorithm.RR){
 				System.out.println();
 			}
-			
+
 			try{
 				writeStatistics(args[1]);
 			}catch(IOException e){
@@ -166,13 +165,13 @@ public class Project1 {
 			}
 		}
 	}
-	
+
 	/**
 	 * Returns the timestamp of the next point the simulation should advance to
 	 */
 	private static int queryNextEvent(){
 		int timeDelta=Integer.MAX_VALUE;
-		
+
 		//Possible next events: Outside arrival, process finishing CPU, process
 		//finishing I/O, others? ... SRT preemption, but that is weird.
 		if(outside.size() > 0) {
@@ -199,19 +198,11 @@ public class Project1 {
 			timeDelta = 0;
 			//reason = "process entering";
 		}
-		
+
 		//System.out.println("Next process is occuring because: "+reason);
 		return timeDelta;
 	}
-	
-	/**
-	 * Updates the current time variable. This really shouldn't be a method of
-	 * its own. We will discuss this tonight. 
-	 */
-	/*private static void updateTimestamps(int timeDelta){
-		
-	}*/
-	
+
 	/**
 	 * Parse process data from a file, create new processes with the data.
 	 * Push new processes to the Outside queue.
@@ -242,7 +233,7 @@ public class Project1 {
 	 */
 	private static Process parse(String in){
 		String[] tokens = in.split("\\|");
-		
+
 		if(tokens.length != 5) 
 			throw new IllegalArgumentException("Invalid process description ("+tokens.length+"): "+in);
 		return new Process(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]));
@@ -270,13 +261,13 @@ public class Project1 {
 		}
 		//If there is something in the processor and the processor is not on cooldown
 		if (currentProcess != null && cooldown == 0){
-			
+
 			// If the processor isn't working on a CS.
 			if (preemptState == State.WAITING) {
 				//decrement the remaining process time by the elapsed time
 				currentProcess.decrementTime(elapsedTime);
 				currentProcess.addToTurnTime(elapsedTime);
-				
+
 				// If the current process is done with its current CPU Burst...
 				if (currentProcess.getRemainingCPUTime() <= 0) {
 					//decrement the number of remaining bursts
@@ -284,7 +275,7 @@ public class Project1 {
 					//Print remaining bursts to output if any left
 					if (currentProcess.getRemainingCPUBursts() > 0){
 						System.out.print("time "+currentTime+"ms: Process "+currentProcess.getID()
-							+" completed a CPU burst; ");
+						+" completed a CPU burst; ");
 						if (currentProcess.getRemainingCPUBursts() == 1)
 							System.out.println(currentProcess.getRemainingCPUBursts()
 									+" burst to go ["+queueStatus()+"]");
@@ -292,15 +283,25 @@ public class Project1 {
 							System.out.println(currentProcess.getRemainingCPUBursts()
 									+" bursts to go ["+queueStatus()+"]");
 					}
-					
+
 					//Start a context switch to empty the CPU
 					emptyCPU();
+				}
+				if(currentAlg == Algorithm.RR){
+					timesliceRemaining -= elapsedTime;
+					if(timesliceRemaining == 0){
+						if(queue.isEmpty()){
+							System.out.println("time "+currentTime+"ms: Time slice expired;"
+									+ " no preemption because ready queue is empty ["+queueStatus()+"]");
+							timesliceRemaining = timesliceMax;
+						}
+					}
 				}
 			}
 			//If the CPU is context switching the current process out (and the cooldown is 0)
 			else if (preemptState == State.EMPTYING) {
 				currentProcess.iterateWaitCounter();
-				
+
 				/* If the process is not finished with the current burst, return it to the queue.
 				 * This should only be caused by a preemption. */
 				if (currentProcess.getRemainingCPUTime() > 0) {
@@ -332,18 +333,18 @@ public class Project1 {
 				//Set the CPU to a WAITING state
 				preemptState = State.WAITING;
 				System.out.print("time "+ currentTime +"ms: Process "
-					+currentProcess.getID()+" started using the CPU");
+						+currentProcess.getID()+" started using the CPU");
 				if (currentProcess.getRemainingCPUTime() < currentProcess.getCPUBurstTime())
 					System.out.print(" with "+ currentProcess.getRemainingCPUTime() 
-						+"ms remaining");
+					+"ms remaining");
 				System.out.println(" ["+queueStatus()+"]");
-				
+
 				//Refresh the timeslice for round robin algorithm
 				if(currentAlg == Algorithm.RR) timesliceRemaining = timesliceMax;
 			}
 		}	
 	}
-	
+
 	/**
 	 * If there is something in the CPU, and the CPU is not busy, 
 	 * 	initiate a context switch to empty the CPU.
@@ -354,30 +355,30 @@ public class Project1 {
 			if (checkPreemption()){
 				if (currentAlg == Algorithm.RR && timesliceRemaining == 0)
 					System.out.println("time "+currentTime+"ms: Time slice expired;"
-						+ " process " + currentProcess.getID()
-						+ " preempted with " + (currentProcess.getRemainingCPUTime())
-						+ "ms to go ["+queueStatus()+"]");
+							+ " process " + currentProcess.getID()
+							+ " preempted with " + (currentProcess.getRemainingCPUTime())
+							+ "ms to go ["+queueStatus()+"]");
 			} //if the process has been preempted, don't print
 			else if (currentProcess.getRemainingCPUBursts() > 0){
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
-					+ " switching out of CPU; will block on I/O until time "
-					+ (currentTime + (contextSwitchTime/2) + currentProcess.getIOTime())
-					+ "ms ["+queueStatus()+"]");
+				+ " switching out of CPU; will block on I/O until time "
+				+ (currentTime + (contextSwitchTime/2) + currentProcess.getIOTime())
+				+ "ms ["+queueStatus()+"]");
 			}else{
 				System.out.println("time "+currentTime+"ms: Process " + currentProcess.getID()
-					+ " terminated ["+queueStatus()+"]");
+				+ " terminated ["+queueStatus()+"]");
 			}
 			//set the cooldown
 			cooldown = (contextSwitchTime/2);
 			//change the preemptionState to EMPTYING
 			preemptState = State.EMPTYING;
-			
+
 			if(currentAlg == Algorithm.RR) timesliceRemaining = 0;
 			return true;
 		}
 		return false;
 	}
-	
+
 	/**
 	 * If the cpu is empty, move the current process to the cpu and
 	 * 	initiate a context switch.
@@ -395,13 +396,13 @@ public class Project1 {
 		}
 		return false;
 	} 
-	
+
 	/**
 	 * Move all processes that have completed I/O to the queue 
 	 */
 	private static void updateIO(){
 		Iterator<Process> iter;
-		
+
 		if (debugging) {
 			System.out.print(currentTime+": I/O List before update: ");
 			iter = io.iterator();
@@ -424,13 +425,13 @@ public class Project1 {
 				System.out.println(" ["+queueStatus()+"]");
 				queue.add(temp);
 			}
-				
+
 			else
 				System.out.println("; added to ready queue ["+queueStatus()+"]");
-			
-			
+
+
 		}
-		
+
 		if (debugging) {
 			System.out.print(currentTime+": I/O List after update: ");
 			iter = io.iterator();
@@ -441,14 +442,14 @@ public class Project1 {
 			System.out.println("");
 		}
 	}
-	
+
 	/**
 	 * Move processes to the queue if it is time for the process to enter.
 	 * @param elapsedTime the amount of time since the last cpu update
 	 */
 	private static void updateOutside(){
 		Iterator<Process> iter;
-		
+
 		if (debugging) {
 			System.out.print(currentTime+": Outside List before update: ");
 			iter = outside.iterator();
@@ -458,7 +459,7 @@ public class Project1 {
 			}
 			System.out.println("");
 		}
-		
+
 		iter = outside.iterator();
 		while (iter.hasNext()) {
 			Process p = iter.next();
@@ -478,7 +479,7 @@ public class Project1 {
 				iter.remove();
 			}
 		}
-		
+
 		if (debugging) {
 			System.out.print(currentTime+": Outside List after update: ");
 			iter = outside.iterator();
@@ -488,9 +489,9 @@ public class Project1 {
 			}
 			System.out.println("");
 		}
-		
+
 	}
-	
+
 	/**
 	 * If the CPU is empty push the next queued object into the CPU
 	 */
@@ -501,7 +502,7 @@ public class Project1 {
 			p.addToWaitTime(elapsedTime);
 			p.addToTurnTime(elapsedTime);
 		}
-		
+
 		//if the queue is empty, return
 		if (queue.isEmpty())
 			return;
@@ -509,9 +510,11 @@ public class Project1 {
 		if (currentProcess == null && preemptState == State.WAITING)
 			fillCPU(queue.poll());
 	}
-	
+
 	/**
-	 * Checks for a preemption using the current algorithm
+	 * Checks for a preemption using the current algorithm.
+	 * If Round Robin algorithm is in use, and the timeslice has expired
+	 * but there is nothing in the queue, also resets the timeslice.
 	 * @param alg the algorithm to check with
 	 * @return true if there was a preemption, false otherwise
 	 */
@@ -529,10 +532,10 @@ public class Project1 {
 		}
 		return false;
 	}
-	
+
 	private static void writeStatistics(String filename) throws IOException{
 		NumberFormat formatter = new DecimalFormat("#0.00");
-		
+
 		fileOut.write("Algorithm "+currentAlg+"\n");
 		double avgBurst=0, avgWait=0, avgTurn=0;
 		int totalBursts=0, totalWaits=0, totalTurns=0;
@@ -542,17 +545,17 @@ public class Project1 {
 			totalBursts += p.getNumberOfBursts();
 			totalWaits += p.getWaitCount();
 			totalTurns += p.getTurnCount();
-			
-			
+
+
 			avgBurst += p.getCPUBurstTime()*p.getNumberOfBursts();
 			avgTurn += p.getTurnTimer();
 			avgWait += p.getWaitTimer();
 		}
-		
+
 		avgBurst = avgBurst/totalBursts;
 		avgTurn = avgTurn/totalTurns;
 		avgWait = avgWait/totalWaits;
-		
+
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+"\n");
 		fileOut.write("-- average wait time: "+formatter.format(avgWait)+"\n");
 		fileOut.write("-- average turnaround time: "+formatter.format(avgTurn)+"\n");
@@ -560,11 +563,11 @@ public class Project1 {
 		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
 		fileOut.flush();
 	}
-	
+
 	private static String queueStatus() {
 		if (queue.size() == 0)
 			return "Q <empty>";
-		
+
 		String retVal = "Q";
 		Queue<Process> copyQueue;
 		if (currentAlg == Algorithm.SRT)
@@ -577,6 +580,6 @@ public class Project1 {
 		}
 		return retVal;
 	}
-	
-	
+
+
 };
