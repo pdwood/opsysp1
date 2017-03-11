@@ -305,6 +305,7 @@ public class Project1 {
 			}
 			//If the CPU is context switching the current process out (and the cooldown is 0)
 			else if (preemptState == State.EMPTYING) {
+				
 				/* If the process is not finished with the current burst, return it to the queue.
 				 * This should only be caused by a preemption. */
 				if (currentProcess.getRemainingCPUTime() > 0) {
@@ -474,7 +475,6 @@ public class Project1 {
 		while (iter.hasNext()) {
 			Process p = iter.next();
 			if (p.getArrivalTime() <= currentTime) {
-				p.iterateTurnCounter();
 				queue.add(p);
 				System.out.print("time "+currentTime+"ms: Process "+p.getID()+" arrived");
 				if (checkPreemption()){
@@ -565,7 +565,7 @@ public class Project1 {
 
 		avgBurst /= totalBursts;
 		avgTurn /= totalTurns;
-		avgWait /= totalWaits;
+		avgWait /= csCount;
 		
 		fileOut.write("-- average CPU burst time: "+formatter.format(avgBurst)+" ms\n");
 		fileOut.write("-- average wait time: "+formatter.format(avgWait)+" ms\n");
@@ -574,11 +574,6 @@ public class Project1 {
 		fileOut.write("-- total number of preemptions: "+preemptCount+"\n");
 		fileOut.flush();
 		
-		if(avgBurst + avgWait + contextSwitchTime != avgTurn){
-			//Technically this only holds for non-preemptive algorithms.
-			//But where does the IO time go?
-			System.err.println("Calculation error: avgBurst + avgWait + t_cs != avgTurn");
-		}
 	}
 
 	private static String queueStatus() {
